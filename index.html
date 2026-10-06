@@ -452,6 +452,7 @@ async function W(fn, okMsg) {
 }
 function renderSync() {
   const el = $('#who'); if (!el) return;
+  if (!API || !KEY) { el.textContent = 'Sin conectar'; return; }
   if (S.busy) { el.textContent = 'Guardando en la hoja…'; return; }
   if (S.sheetErr) { el.textContent = 'Sin conexión con la hoja'; return; }
   if (S.loaded.size < COLS.length + 1) { el.textContent = 'Leyendo la hoja…'; return; }
