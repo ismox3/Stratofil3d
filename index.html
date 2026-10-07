@@ -163,6 +163,35 @@ input[type=color]{padding:2px;height:42px}
 .cat-it .s{font-size:11px;color:var(--muted)}
 .skel{height:56px;border-radius:12px;background:var(--surface-2);margin-bottom:8px;opacity:.7}
 .confirm-line{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.tile{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;cursor:pointer;min-width:0}
+.tile .l{font-size:12px;color:var(--muted);font-weight:500}
+.tile .v{font-family:var(--f-mono);font-size:19px;font-weight:600;font-variant-numeric:tabular-nums}
+.tile .s{font-size:12px;color:var(--muted)}
+.tile:hover{background:var(--surface-2)}
+.dl{font-weight:700;font-size:12px;color:var(--muted)}
+.dl.up{color:var(--ok)}.dl.down{color:var(--bad)}
+.kpi.hero .dl{color:inherit}
+.bar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;max-height:228px;overflow-y:auto;padding:2px;margin-top:6px}
+.pick{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:12px;border:1px solid var(--line);background:var(--surface);cursor:pointer;text-align:left;min-width:0;position:relative}
+.pick .sw{width:24px;height:24px}
+.pick.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.pk-t{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+.pk-t b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pk-t small{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pk-n{margin-left:auto;font-family:var(--f-mono);font-weight:700;font-size:12px;color:var(--accent)}
+.chat{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.msg{max-width:92%;padding:10px 14px;border-radius:16px;font-size:14.5px;line-height:1.5;overflow-wrap:anywhere}
+.msg.me{align-self:flex-end;background:var(--lime);color:var(--lime-ink);border-bottom-right-radius:4px;white-space:pre-wrap}
+.msg.ai{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg.ai p{margin:0 0 8px}.msg.ai p:last-child{margin-bottom:0}
+.msg.ai ul{margin:4px 0 8px;padding-left:20px}.msg.ai li{margin:2px 0}
+.sugs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.sugs .chip{white-space:normal;text-align:left;font-weight:500}
+form.ask{display:flex;gap:8px;align-items:flex-end}
+form.ask textarea{flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);resize:none;min-height:46px}
 @media (max-width:380px){.kpi .v{font-size:18px}.line-nums{grid-template-columns:1fr 1fr 1fr auto}.fg3{grid-template-columns:1fr 1fr}}
 @media (prefers-reduced-motion:no-preference){.sheet-card{animation:up .22s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
 </style>
@@ -200,7 +229,7 @@ const today = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d
 const fdate = s => s ? s.slice(8, 10) + '/' + s.slice(5, 7) + '/' + s.slice(0, 4) : '';
 const daysSince = s => s ? Math.max(0, Math.round((Date.parse(today()) - Date.parse(s)) / 864e5)) : 0;
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const title = s => String(s || '').toLowerCase().replace(/(^|[\s(/-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+const title = s => String(s || '').toLowerCase().replace(/(^|[\s(/-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase()).replace(/\bUsdt\b/g, 'USDT').replace(/\bUsd\b/g, 'USD').replace(/\bPla\b/g, 'PLA').replace(/\bPetg\b/g, 'PETG').replace(/\bAbs\b/g, 'ABS');
 const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 
@@ -213,7 +242,7 @@ const DEF = {
   presentaciones: ['CON SPOOL','REFILL','UNIDAD'],
   negocio: { nombre: 'StratoFil3D', whatsapp: '', instagram: '', ciudad: 'Maracaibo' }
 };
-const COLS = ['productos','compras','ventas','encamino','apartados','gastos','clientes'];
+const COLS = ['productos','compras','ventas','encamino','apartados','gastos','clientes','pagos'];
 
 /* ============ conexión con tu Google Sheet ============ */
 const SHEET_ID = '1pqmDnkzPCPrjwNeghiVCEymI1tjyZzZ1tJt2YnB-DfM';
@@ -222,31 +251,63 @@ const SRV = 'Google Sheets';
 const SH = {
   productos: { tab: 'Inventario', last: 'P', max: 204 },
   compras:   { tab: 'Compras', last: 'Q', max: 504 },
-  ventas:    { tab: 'Ventas', last: 'W', max: 504 },
+  ventas:    { tab: 'Ventas', last: 'X', max: 504 },
   encamino:  { tab: "'En Camino'", last: 'O', max: 204 },
   apartados: { tab: 'Apartados', last: 'N', max: 204 },
   gastos:    { tab: 'Gastos', last: 'F', max: 504 },
   clientes:  { tab: 'Clientes', last: 'G', max: 504 },
+  pagos:     { tab: 'Pagos', last: 'J', max: 1004 },
   params:    { tab: "'Parámetros'", range: "'Parámetros'!A4:H61" }
 };
 const rangeOf = k => SH[k].range || (SH[k].tab + '!A5:' + SH[k].last + SH[k].max);
 
 /* ============ estado ============ */
-const S = { productos:[], compras:[], ventas:[], encamino:[], apartados:[], gastos:[], clientes:[], params:null, meta:null,
+const S = { productos:[], compras:[], ventas:[], encamino:[], apartados:[], gastos:[], clientes:[], pagos:[], params:null, meta:null,
+  cajaP:'hoy', cajaDia:'', statP:'mes', catBs:false, chat:[], askDraft:'', asking:null, meName:'',
   raw:{}, loaded:new Set(), tab: lsGet('sf_tab') || 'inicio', sub:null, year:new Date().getFullYear(),
   invFilter:'todos', invQ:'', ventasQ:'', catEnCamino:true, uid:null, canWrite:true, offline:false,
   sheetErr:null, busy:false, lastSync:null };
 let C = null, installEvt = null;
+let sampleCap = null;
 
 const cfg = () => {
   const c = Object.assign({}, DEF, S.params || {});
   const m = S.meta || {};
   c.negocio = Object.assign({}, DEF.negocio, m.negocio || {});
   c.hex = m.hex || {};
+  c.tasa = (S.params && S.params.tasa) || 0; c.tasaFecha = (S.params && S.params.tasaFecha) || '';
   return c;
 };
 const prod = code => S.productos.find(p => p.codigo === code);
 const isAcc = p => p && (p.presentacion === 'UNIDAD' || p.tipo === 'ACCESORIO');
+const bsFmt = n => 'Bs ' + (Math.round((n || 0) * 100) / 100).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const tasaFmt = n => (Math.round((n || 0) * 100) / 100).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const enBs = usd => cfg().tasa ? bsFmt(usd * cfg().tasa) : '';
+const myName = () => (lsGet('sf_nombre') || S.meName || '').trim();
+const addDays = (iso, n) => { const [y, m, d] = iso.split('-').map(Number); const t = new Date(Date.UTC(y, m - 1, d + n)); return t.toISOString().slice(0, 10); };
+const inR = (iso, r) => !!iso && iso >= r[0] && iso <= r[1];
+function rangeOfP(kind, t) {
+  t = t || today();
+  const [y, m, d] = t.split('-').map(Number);
+  if (kind === 'hoy') return [t, t];
+  if (kind === 'ayer') { const a = addDays(t, -1); return [a, a]; }
+  if (kind === 'semana') { const dow = (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7; return [addDays(t, -dow), addDays(t, 6 - dow)]; }
+  if (kind === 'mes') return [y + '-' + pad(m) + '-01', addDays((m === 12 ? (y + 1) + '-01' : y + '-' + pad(m + 1)) + '-01', -1)];
+  if (kind === 'anio') return [y + '-01-01', y + '-12-31'];
+  return [t, t];
+}
+function prevRange(kind, t) {
+  t = t || today();
+  const cur = rangeOfP(kind, t), elapsed = Math.round((Date.parse(t) - Date.parse(cur[0])) / 864e5);
+  let start;
+  if (kind === 'semana') start = addDays(cur[0], -7);
+  else if (kind === 'mes') { const [y, m] = cur[0].split('-').map(Number); start = (m === 1 ? (y - 1) + '-12' : y + '-' + pad(m - 1)) + '-01'; }
+  else if (kind === 'anio') start = (+cur[0].slice(0, 4) - 1) + '-01-01';
+  else start = addDays(cur[0], -1);
+  const prevFull = rangeOfP(kind, start);
+  const end = addDays(start, elapsed);
+  return [start, end < prevFull[1] ? end : prevFull[1]];
+}
 const comPct = m => { const x = cfg().metodos.find(z => z.n === m); return x ? num(x.c) / 100 : 0; };
 
 /* ============ cálculos (misma lógica que tu hoja) ============ */
@@ -361,16 +422,17 @@ function parseAll() {
     cantidad: pnum(r[7]), subtotal: pnum(r[8]), estado: cell(r, 12) || 'EN CAMINO', fechaLlegada: pdate(r[13]), notas: cell(r, 14) })).filter(x => x.codigo);
   if (R.gastos) S.gastos = R.gastos.map((r, i) => ({ row: i + 5, id: 'g' + (i + 5), sig: sigOf(r), fecha: pdate(r[0]), categoria: cell(r, 1), descripcion: cell(r, 2), monto: pnum(r[3]), metodo: cell(r, 4), notas: cell(r, 5) })).filter(x => x.fecha || x.monto);
   if (R.clientes) S.clientes = R.clientes.map((r, i) => ({ row: i + 5, id: 'k' + (i + 5), sig: sigOf(r), nombre: cell(r, 0), telefono: cell(r, 1), cedula: cell(r, 2), direccion: cell(r, 3), ciudad: cell(r, 4), correo: cell(r, 5), notas: cell(r, 6) })).filter(x => x.nombre);
-  if (R.ventas) S.ventas = groupRows(R.ventas, 'v', (r) => ({ fecha: pdate(r[0]), cliente: cell(r, 2), metodo: cell(r, 11), tasa: cell(r, 17) ? pnum(r[17]) : '', estado: cell(r, 19), pagadoCell: pnum(r[20]), notas: cell(r, 22) }))
+  if (R.ventas) S.ventas = groupRows(R.ventas, 'v', (r) => ({ fecha: pdate(r[0]), cliente: cell(r, 2), metodo: cell(r, 11), tasa: cell(r, 17) ? pnum(r[17]) : '', estado: cell(r, 19), pagadoCell: pnum(r[20]), notas: cell(r, 22), vendedor: cell(r, 23) }))
     .map(v => { const tot = v.items.reduce((s, it) => s + it.cantidad * it.precio - it.descuento, 0); v.pagos = [{ monto: (!v.estado || v.estado === 'PAGADO') ? tot : v.pagadoCell }]; return v; });
   if (R.apartados) S.apartados = groupRows(R.apartados, 'a', (r) => ({ fecha: pdate(r[0]), cliente: cell(r, 2), estado: cell(r, 12) || 'APARTADO', notas: cell(r, 13) }), (g, r) => { g.abonoSum = (g.abonoSum || 0) + pnum(r[11]); if (!g.notas && cell(r, 13)) g.notas = cell(r, 13); })
     .map(a => { a.abonos = a.abonoSum ? [{ monto: a.abonoSum }] : []; return a; });
+  if (R.pagos) S.pagos = R.pagos.map((r, i) => ({ row: i + 5, id: 'p' + (i + 5), sig: sigOf(r), fecha: pdate(r[0]), tipo: cell(r, 1), numero: cell(r, 2), cliente: cell(r, 3), monto: pnum(r[4]), metodo: cell(r, 5), tasa: cell(r, 6) ? pnum(r[6]) : 0, vendedor: cell(r, 8), notas: cell(r, 9) })).filter(x => x.fecha && x.monto);
   const P = R.params;
   if (P) {
     const g = (i, j) => cell(P[i], j), lists = P.slice(8), colv = j => lists.map(r => cell(r, j)).filter(Boolean);
     S.params = { tax: ppct(g(0, 1)), tarifaPie: pnum(g(1, 1)) || 34, stockMin: pnum(g(3, 1)), mesesCobertura: pnum(g(4, 1)) || 2,
       tipos: colv(0), colores: colv(1), presentaciones: colv(2), metodos: lists.filter(r => cell(r, 3)).map(r => ({ n: cell(r, 3), c: ppct(cell(r, 4)) * 100 })),
-      categorias: colv(6), proveedores: colv(7) };
+      categorias: colv(6), proveedores: colv(7), tasa: pnum(g(5, 1)), tasaFecha: (String(g(5, 2)).match(/(\d{2}\/\d{2}\/\d{4})/) || [])[1] ? pdate(String(g(5, 2)).match(/(\d{2}\/\d{2}\/\d{4})/)[1]) : '' };
     for (const k of ['tipos','presentaciones','categorias','proveedores','metodos']) if (!S.params[k].length) delete S.params[k];
   }
 }
@@ -471,7 +533,8 @@ const fB = r => '=IF(A' + r + '="","",IF(AND(A' + r + '=A' + (r - 1) + ',TRIM(C'
 const fI = r => '=IF(D' + r + '="","",IFERROR(INDEX(Inventario!$P$5:$P$204,MATCH(D' + r + ',Inventario!$A$5:$A$204,0)),""))';
 const precioCell = (r, it) => { const p = prod(it.codigo); return (p && Math.abs(num(it.precio) - num(p.precio)) < 0.005) ? fI(r) : num(it.precio); };
 const BLANK = {
-  ventas: r => ['', fB(r), '', '', null, null, null, '', fI(r), '', null, '', null, null, null, null, null, '', null, '', '', null, ''],
+  ventas: r => ['', fB(r), '', '', null, null, null, '', fI(r), '', null, '', null, null, null, null, null, '', null, '', '', null, '', ''],
+  pagos: () => ['', '', '', '', '', '', '', '', '', ''],
   apartados: r => ['', '', '', '', null, null, null, '', fI(r), '', null, '', '', ''],
   compras: () => ['', '', '', '', null, null, null, '', '', null, null, null, '', null, null, null, ''],
   encamino: () => ['', '', '', '', null, null, null, '', '', null, null, null, '', '', ''],
@@ -482,7 +545,7 @@ const BLANK = {
 function ventaRows(start, v, items, estado, pagado) {
   const m = {};
   items.forEach((it, i) => { const r = start + i, first = i === 0;
-    m[r] = [serial(v.fecha), Number(v.numero), txt(v.cliente), codeVal(it.codigo), null, null, null, num(it.cantidad), precioCell(r, it), num(it.descuento) || '', null, v.metodo || '', null, null, null, null, null, v.tasa ? num(v.tasa) : '', null, first ? estado : '', first ? r2(pagado) : '', null, first ? txt(v.notas || '') : '']; });
+    m[r] = [serial(v.fecha), Number(v.numero), txt(v.cliente), codeVal(it.codigo), null, null, null, num(it.cantidad), precioCell(r, it), num(it.descuento) || '', null, v.metodo || '', null, null, null, null, null, v.tasa ? num(v.tasa) : '', null, first ? estado : '', first ? r2(pagado) : '', null, first ? txt(v.notas || '') : '', txt(v.vendedor || '')]; });
   return m;
 }
 function apRows(start, a, items) {
@@ -493,6 +556,20 @@ function apRows(start, a, items) {
 }
 const compraRow = d => [serial(d.fecha), txt(d.pedido), txt(d.proveedor), codeVal(d.codigo), null, null, null, num(d.cantidad), num(d.subtotal), null, null, null, d.envioReal === null || d.envioReal === undefined || d.envioReal === '' ? '' : num(d.envioReal), null, null, null, txt(d.notas || '')];
 const caminoRow = d => [serial(d.fecha), txt(d.pedido), txt(d.proveedor), codeVal(d.codigo), null, null, null, num(d.cantidad), num(d.subtotal), null, null, null, d.estado || 'EN CAMINO', d.fechaLlegada ? serial(d.fechaLlegada) : '', txt(d.notas || '')];
+const pagoRow = (r, d) => [serial(d.fecha), d.tipo, txt(String(d.numero)), txt(d.cliente), r2(num(d.monto)), d.metodo || '', d.tasa ? num(d.tasa) : '', '=IF(OR(E' + r + '="",G' + r + '=""),"",E' + r + '*G' + r + ')', txt(d.vendedor || ''), txt(d.notas || '')];
+async function logPago(d) {
+  await fresh('pagos');
+  const r = needRows('pagos', 1);
+  await writeRows('pagos', { [r]: pagoRow(r, Object.assign({ vendedor: myName(), tasa: /M[ÓO]VIL|BS/i.test(d.metodo || '') ? cfg().tasa : '' }, d)) });
+}
+async function unlogPagos(tipo, numero) {
+  await fresh('pagos');
+  const rows = S.pagos.filter(p => p.tipo === tipo && String(p.numero) === String(numero));
+  if (!rows.length) return;
+  const m = {}; for (const p of rows) m[p.row] = BLANK.pagos(); await writeRows('pagos', m);
+}
+const isBsM = m => /M[ÓO]VIL|\bBS\b|TRANSFERENCIA/i.test(m || '');
+const pagosDe = (tipo, numero) => S.pagos.filter(p => p.tipo === tipo && String(p.numero) === String(numero));
 const estadoPago = (total, pagado) => pagado >= total - 0.005 ? 'PAGADO' : pagado > 0 ? 'ABONADO' : 'PENDIENTE';
 const sumItems = items => items.reduce((s, it) => s + num(it.cantidad) * num(it.precio) - num(it.descuento), 0);
 let toastT = null;
@@ -560,6 +637,11 @@ function vInicio() {
     + '</div>';
   if (installEvt) h += '<button class="alert p-info" data-act="install"><b>Instalar StratoFil3D</b>&nbsp;en este teléfono ›</button>';
   if (can()) h += '<div class="quick"><button class="btn" data-act="newVenta"><span>＋</span>Venta</button><button class="btn" data-act="newApartado"><span>⏸</span>Apartado</button><button class="btn" data-act="newGasto"><span>−</span>Gasto</button></div>';
+  const hoyS = periodStats([today(), today()]), mr = rangeOfP('mes'), ma = periodStats([mr[0], today()]), mb = periodStats(prevRange('mes'));
+  h += '<div class="tiles"><button class="tile" data-act="goSub" data-s="caja"><span class="l">Caja de hoy</span><span class="v">' + money(hoyS.cobrado) + '</span><span class="s">entró · vendiste ' + money(hoyS.ventas) + '</span></button>'
+    + '<button class="tile" data-act="goSub" data-s="stats"><span class="l">Ventas del mes</span><span class="v">' + money(ma.ventas) + '</span><span class="s">' + delta(ma.ventas, mb.ventas) + ' vs mes pasado</span></button></div>';
+  h += tasaCard();
+  if (sampleCap) h += '<button class="alert p-info ai-btn" data-act="goSub" data-s="asistente"><b>Pregúntale a tu negocio</b>&nbsp;· asistente con IA ›</button>';
   h += '<h2 class="sec">Pendientes</h2>';
   const al = [];
   if (bajo) al.push('<button class="alert p-warn" data-act="goInv" data-f="bajo"><b>' + bajo + '</b> producto' + (bajo === 1 ? '' : 's') + ' con stock bajo y nada en camino</button>');
@@ -653,12 +735,12 @@ function vCobrar() {
 function msgCobro(x) {
   const n = cfg().negocio, nombre = String(x.cliente).split(' ')[0];
   const det = x.ventas.map(({ v, t }) => '• Compra del ' + fdate(v.fecha) + ' (N° ' + v.numero + '): ' + money(t.saldo)).join('\n');
-  return 'Hola ' + nombre + ', ¿cómo estás? Te escribo de ' + n.nombre + ' para recordarte el saldo pendiente de *' + money(x.total) + '*:\n' + det + '\n\nPuedes pagar por ' + cfg().metodos.map(m => title(m.n)).join(', ') + '. Avísame cuando lo hagas para registrarlo. ¡Gracias!';
+  return 'Hola ' + nombre + ', ¿cómo estás? Te escribo de ' + n.nombre + ' para recordarte el saldo pendiente de *' + money(x.total) + '*' + (cfg().tasa ? ' (' + enBs(x.total) + ' a la tasa de hoy, ' + tasaFmt(cfg().tasa) + ')' : '') + ':\n' + det + '\n\nPuedes pagar por ' + cfg().metodos.map(m => title(m.n)).join(', ') + '. Avísame cuando lo hagas para registrarlo. ¡Gracias!';
 }
 
 function vMas() {
-  const items = [['apartados','Apartados','Productos reservados por clientes'],['pedidos','Pedidos en camino','Lo que viene desde Bambu Lab'],['compras','Compras','Mercancía recibida y su costo'],['gastos','Gastos','Delivery, empaques, publicidad…'],['clientes','Clientes','Directorio e historial'],['reposicion','Qué pedir','Reposición sugerida según ventas'],['resumen','Resumen anual','Ventas, utilidad y gastos por mes'],['catalogo','Catálogo para clientes','Texto e imagen para WhatsApp'],['ajustes','Ajustes','Tax, envío, métodos de pago, respaldo']];
-  return head('Más') + '<a class="alert p-mut" style="text-decoration:none;color:inherit" href="' + SHEET_URL + '" target="_blank" rel="noopener"><b>Conectada a tu Google Sheet</b>&nbsp;· abrir la hoja ›</a><div class="list">' + items.map(([k, t, d]) => '<button class="row" data-act="goSub" data-s="' + k + '"><div class="main"><div class="t">' + t + '</div><div class="d">' + d + '</div></div><div class="end muted">›</div></button>').join('') + '</div>';
+  const items = [['caja','Caja y cierre','Lo que entró por cada método de pago'],['stats','Estadísticas','Compara períodos, vendedores, productos y clientes']].concat(sampleCap ? [['asistente','Pregúntale a tu negocio','Asistente con IA que responde con tus datos']] : []).concat([['apartados','Apartados','Productos reservados por clientes'],['pedidos','Pedidos en camino','Lo que viene desde Bambu Lab'],['compras','Compras','Mercancía recibida y su costo'],['gastos','Gastos','Delivery, empaques, publicidad…'],['clientes','Clientes','Directorio e historial'],['reposicion','Qué pedir','Reposición sugerida según ventas'],['resumen','Resumen anual','Ventas, utilidad y gastos por mes'],['catalogo','Catálogo para clientes','Texto e imagen para WhatsApp'],['ajustes','Ajustes','Tax, envío, métodos de pago, tu nombre, respaldo']]);
+  return head('Más') + '<a class="alert p-mut" style="text-decoration:none;color:inherit" href="' + SHEET_URL + '" target="_blank" rel="noopener"><b>Conectada a tu Google Sheet</b>&nbsp;· abrir la hoja ›</a><div class="list">' + items.map(([k, t, d]) => '<button class="row" data-act="goSub" data-s="' + k + '"><div class="main"><div class="t">' + t + '</div><div class="d">' + d + '</div></div><div class="end muted">›</div></button>').join('') + '<button class="row" data-act="tasa"><div class="main"><div class="t">Tasa del día</div><div class="d">' + (cfg().tasa ? tasaFmt(cfg().tasa) + ' Bs/$' + (cfg().tasaFecha ? ' · del ' + fdate(cfg().tasaFecha) : '') : 'Sin definir') + '</div></div><div class="end muted">›</div></button></div>';
 }
 
 const SUBS = {
@@ -719,15 +801,16 @@ const SUBS = {
     const groups = catGroups();
     let h = head('Catálogo', true);
     h += '<p class="muted small" style="margin-top:-6px">Muestra lo que tienes libre para vender. Compártelo como texto o como imagen por WhatsApp e Instagram.</p>';
-    h += '<div class="chips"><button class="chip" data-act="catCam" data-v="0" aria-pressed="' + (!S.catEnCamino) + '">Solo en existencia</button><button class="chip" data-act="catCam" data-v="1" aria-pressed="' + S.catEnCamino + '">Incluir lo que llega pronto</button></div>';
+    h += '<div class="chips"><button class="chip" data-act="catCam" data-v="0" aria-pressed="' + (!S.catEnCamino) + '">Solo en existencia</button><button class="chip" data-act="catCam" data-v="1" aria-pressed="' + S.catEnCamino + '">Incluir lo que llega pronto</button>' + (cfg().tasa ? '<button class="chip" data-act="catBs" aria-pressed="' + S.catBs + '">Precios también en Bs</button>' : '') + '</div>';
     h += '<div class="btns full" style="margin-bottom:14px"><button class="btn pri" data-act="catCopy">Copiar texto</button><a class="btn" target="_blank" rel="noopener" href="' + esc(waLink('', catText())) + '">Enviar por WhatsApp</a><button class="btn" data-act="catImg">Compartir imagen</button></div>';
     if (!groups.length) return h + '<div class="card empty"><b>Nada disponible</b>Cuando tengas stock libre aparecerá aquí.</div>';
-    for (const g of groups) h += '<div class="cat-group"><div class="cat-h"><span>' + esc(g.tipo) + ' · ' + esc(title(g.pres)) + '</span><span class="pr">' + money(g.precio) + '</span></div><div class="cat-grid">' + g.items.map(e => '<div class="cat-it">' + swatch(e.p) + '<div style="min-width:0"><div class="n">' + esc(title(e.p.color)) + '</div><div class="s">' + (e.disp - e.apartadoDeStock > 0 ? 'Disponible' : 'Llega pronto') + '</div></div></div>').join('') + '</div></div>';
+    for (const g of groups) h += '<div class="cat-group"><div class="cat-h"><span>' + esc(g.tipo) + ' · ' + esc(title(g.pres)) + '</span><span class="pr">' + money(g.precio) + (S.catBs && cfg().tasa ? ' · ' + enBs(g.precio) : '') + '</span></div><div class="cat-grid">' + g.items.map(e => '<div class="cat-it">' + swatch(e.p) + '<div style="min-width:0"><div class="n">' + esc(title(e.p.color)) + '</div><div class="s">' + (e.disp - e.apartadoDeStock > 0 ? 'Disponible' : 'Llega pronto') + '</div></div></div>').join('') + '</div></div>';
     return h;
   },
   ajustes() {
     const c = cfg();
     return head('Ajustes', true) + '<form class="fg" data-form="ajustes">'
+      + '<div class="card fg"><b>Este dispositivo</b><div class="f"><label class="lb" for="aj_yo">Tu nombre</label><input id="aj_yo" name="minombre" placeholder="Ej. Ismael" value="' + esc(myName()) + '"></div><p class="muted small" style="margin:0">Se guarda en cada venta y pago que registres, para ver cuánto vende cada quien.</p></div>'
       + '<div class="card fg"><b>Tu negocio</b><div class="fg2"><div class="f"><label class="lb" for="aj_nom">Nombre</label><input id="aj_nom" name="nombre" value="' + esc(c.negocio.nombre) + '"></div><div class="f"><label class="lb" for="aj_wa">WhatsApp del negocio</label><input id="aj_wa" name="whatsapp" inputmode="tel" placeholder="0414…" value="' + esc(c.negocio.whatsapp) + '"></div><div class="f"><label class="lb" for="aj_ig">Instagram</label><input id="aj_ig" name="instagram" placeholder="@stratofil3d" value="' + esc(c.negocio.instagram) + '"></div><div class="f"><label class="lb" for="aj_ci">Ciudad</label><input id="aj_ci" name="ciudad" value="' + esc(c.negocio.ciudad) + '"></div></div><p class="muted small" style="margin:0">Salen en los recibos y en el catálogo.</p></div>'
       + '<div class="card fg"><b>Costos y alertas</b><p class="muted small" style="margin:0">Estos valores y las listas se guardan en la hoja Parámetros.</p><div class="fg2"><div class="f"><label class="lb" for="aj_tax">Impuesto (TAX) %</label><input id="aj_tax" name="tax" inputmode="decimal" value="' + r2(c.tax * 100) + '"></div><div class="f"><label class="lb" for="aj_tp">Envío por pie cúbico ($)</label><input id="aj_tp" name="tarifaPie" inputmode="decimal" value="' + c.tarifaPie + '"></div><div class="f"><label class="lb" for="aj_sm">Stock mínimo (alerta)</label><input id="aj_sm" name="stockMin" inputmode="numeric" value="' + c.stockMin + '"></div><div class="f"><label class="lb" for="aj_mc">Meses de cobertura al reponer</label><input id="aj_mc" name="mesesCobertura" inputmode="numeric" value="' + c.mesesCobertura + '"></div></div></div>'
       + '<div class="card fg"><b>Listas</b><div class="f"><label class="lb" for="aj_met">Métodos de pago (uno por línea: NOMBRE = comisión %)</label><textarea id="aj_met" name="metodos">' + esc(c.metodos.map(m => m.n + ' = ' + num(m.c)).join('\n')) + '</textarea></div><div class="f"><label class="lb" for="aj_cat">Categorías de gasto</label><textarea id="aj_cat" name="categorias">' + esc(c.categorias.join('\n')) + '</textarea></div><div class="fg2"><div class="f"><label class="lb" for="aj_tip">Tipos de producto</label><textarea id="aj_tip" name="tipos">' + esc(c.tipos.join('\n')) + '</textarea></div><div class="f"><label class="lb" for="aj_pro">Proveedores</label><textarea id="aj_pro" name="proveedores">' + esc(c.proveedores.join('\n')) + '</textarea></div></div></div>'
@@ -777,10 +860,193 @@ function catGroups() {
 function catText() {
   const n = cfg().negocio, gs = catGroups();
   let t = '*' + n.nombre.toUpperCase() + '* · Filamentos Bambu Lab originales\n' + (n.ciudad ? n.ciudad + ' · ' : '') + 'Precios en USD\n';
-  for (const g of gs) { t += '\n*' + g.tipo + ' · ' + title(g.pres) + ' — ' + money(g.precio) + '*\n'; t += g.items.map(e => '• ' + title(e.p.color) + (e.disp - e.apartadoDeStock > 0 ? '' : ' _(llega pronto)_')).join('\n') + '\n'; }
+  for (const g of gs) { t += '\n*' + g.tipo + ' · ' + title(g.pres) + ' — ' + money(g.precio) + (S.catBs && cfg().tasa ? ' (' + enBs(g.precio) + ')' : '') + '*\n'; t += g.items.map(e => '• ' + title(e.p.color) + (e.disp - e.apartadoDeStock > 0 ? '' : ' _(llega pronto)_')).join('\n') + '\n'; }
+  if (S.catBs && cfg().tasa) t += '\nPrecios en Bs a la tasa del ' + fdate(cfg().tasaFecha || today()) + ' (' + tasaFmt(cfg().tasa) + ').';
   t += '\nPagos: ' + cfg().metodos.map(m => title(m.n)).join(', ') + '.';
   if (n.whatsapp) t += '\nPedidos: ' + n.whatsapp; if (n.instagram) t += '\nInstagram: ' + n.instagram;
   return t;
+}
+
+/* ============ caja, estadísticas, tasa y asistente ============ */
+function periodStats(r) {
+  const vs = S.ventas.filter(v => inR(v.fecha, r));
+  let ventas = 0, costo = 0, com = 0, units = 0, saldo = 0;
+  for (const v of vs) { const t = vt(v); ventas += t.total; costo += t.costo; com += t.com; units += t.units; saldo += t.saldo; }
+  const gs = S.gastos.filter(g => inR(g.fecha, r)), gastos = gs.reduce((s, g) => s + num(g.monto), 0);
+  const ps = S.pagos.filter(p => inR(p.fecha, r)), cobrado = ps.reduce((s, p) => s + p.monto, 0);
+  const bruta = ventas - costo - com;
+  return { vs, gs, ps, ventas, costo, com, units, saldo, n: vs.length, ticket: vs.length ? ventas / vs.length : 0, bruta, gastos, neta: bruta - gastos, cobrado };
+}
+const rangeTxt = r => r[0] === r[1] ? fdate(r[0]) : fdate(r[0]) + ' al ' + fdate(r[1]);
+function delta(cur, prev, invert) {
+  if (Math.abs(prev) < 0.005 && Math.abs(cur) < 0.005) return '<span class="dl">sin cambio</span>';
+  if (Math.abs(prev) < 0.005) return '<span class="dl ' + (invert ? 'down' : 'up') + '">nuevo</span>';
+  const d = (cur - prev) / Math.abs(prev), up = d >= 0, good = invert ? !up : up;
+  return '<span class="dl ' + (Math.abs(d) < 0.005 ? '' : good ? 'up' : 'down') + '">' + (up ? '▲' : '▼') + ' ' + Math.abs(d * 100).toFixed(0) + '%</span>';
+}
+function cajaRange() { return S.cajaP === 'dia' && S.cajaDia ? [S.cajaDia, S.cajaDia] : rangeOfP(S.cajaP); }
+function cajaMetodos(st) {
+  const M = {};
+  const get = m => (M[m || 'SIN MÉTODO'] = M[m || 'SIN MÉTODO'] || { in: 0, out: 0, bs: 0, n: 0 });
+  for (const p of st.ps) { const x = get(p.metodo); x.in += p.monto; x.n++; if (p.tasa) x.bs += p.monto * p.tasa; }
+  for (const g of st.gs) get(g.metodo).out += num(g.monto);
+  return Object.keys(M).sort((a, b) => M[b].in - M[a].in || M[b].out - M[a].out).map(k => Object.assign({ m: k }, M[k]));
+}
+function cierreTexto() {
+  const r = cajaRange(), st = periodStats(r), ms = cajaMetodos(st), n = cfg().negocio;
+  let t = '*Cierre de caja · ' + n.nombre + '*\n' + rangeTxt(r) + '\n\n*Entró: ' + money(st.cobrado) + '*\n';
+  for (const x of ms) if (x.in) t += '• ' + title(x.m) + ': ' + money(x.in) + (x.bs ? ' (' + bsFmt(x.bs) + ')' : '') + '\n';
+  t += '\nGastos: ' + money(st.gastos) + '\n*Neto en caja: ' + money(st.cobrado - st.gastos) + '*\n';
+  t += '\nVentas: ' + st.n + ' por ' + money(st.ventas) + (st.saldo > 0.005 ? '\nDe esas ventas aún te deben: ' + money(st.saldo) : '');
+  if (myName()) t += '\n\nCerrado por ' + myName();
+  return t;
+}
+SUBS.caja = function () {
+  const r = cajaRange(), st = periodStats(r), ms = cajaMetodos(st);
+  let h = head('Caja y cierre', true);
+  h += '<div class="chips">' + [['hoy','Hoy'],['ayer','Ayer'],['semana','Esta semana'],['mes','Este mes']].map(([k, l]) => '<button class="chip" data-act="cajaP" data-p="' + k + '" aria-pressed="' + (S.cajaP === k) + '">' + l + '</button>').join('')
+    + '<label class="chip" style="display:inline-flex;align-items:center;gap:6px" for="cajaDia">Otro día <input id="cajaDia" type="date" value="' + esc(S.cajaP === 'dia' ? S.cajaDia : '') + '" style="border:0;background:transparent;font:inherit;color:inherit;width:120px;padding:0"></label></div>';
+  h += '<div class="kpis"><div class="kpi hero"><div class="l">Entró a caja · ' + rangeTxt(r) + '</div><div class="v">' + money(st.cobrado) + '</div><div class="s">' + st.ps.length + ' pago' + (st.ps.length === 1 ? '' : 's') + ' recibido' + (st.ps.length === 1 ? '' : 's') + (cfg().tasa ? ' · ' + enBs(st.cobrado) + ' a la tasa de hoy' : '') + '</div></div>'
+    + '<div class="kpi"><div class="l">Vendido</div><div class="v">' + money(st.ventas) + '</div><div class="s">' + st.n + ' venta' + (st.n === 1 ? '' : 's') + '</div></div>'
+    + '<div class="kpi"><div class="l">Gastos</div><div class="v">' + money(st.gastos) + '</div><div class="s">' + st.gs.length + ' registro' + (st.gs.length === 1 ? '' : 's') + '</div></div>'
+    + '<div class="kpi"><div class="l">Neto en caja</div><div class="v">' + money(st.cobrado - st.gastos) + '</div><div class="s">entró menos gastos</div></div>'
+    + '<div class="kpi"><div class="l">Fiado en estas ventas</div><div class="v">' + money(st.saldo) + '</div><div class="s">aún por cobrar</div></div></div>';
+  h += '<h2 class="sec">Por método de pago</h2>';
+  h += ms.length ? '<div class="tbl-wrap"><table><thead><tr><th>Método</th><th>Entró</th><th>Gastos</th><th>Neto</th></tr></thead><tbody>' + ms.map(x => '<tr><td>' + esc(title(x.m)) + (x.bs ? '<div class="muted small">' + bsFmt(x.bs) + '</div>' : '') + '</td><td>' + money(x.in) + '</td><td>' + money(x.out) + '</td><td><b>' + money(x.in - x.out) + '</b></td></tr>').join('') + '<tr class="tot"><td>Total</td><td>' + money(st.cobrado) + '</td><td>' + money(st.gastos) + '</td><td>' + money(st.cobrado - st.gastos) + '</td></tr></tbody></table></div>'
+    : '<div class="card empty"><b>Sin movimientos</b>Los pagos y gastos de este período aparecerán aquí.</div>';
+  h += '<div class="btns full" style="margin-top:12px"><button class="btn pri" data-act="copyCierre">Copiar cierre</button><a class="btn" target="_blank" rel="noopener" href="' + esc(waLink('', cierreTexto())) + '">Enviar por WhatsApp</a></div>';
+  if (st.ps.length) h += '<h2 class="sec">Pagos recibidos</h2><div class="list">' + st.ps.slice().sort((a, b) => b.fecha.localeCompare(a.fecha) || b.row - a.row).map(p => { const d = p.tipo === 'VENTA' ? S.ventas.find(v => String(v.numero) === String(p.numero)) : S.apartados.find(a => a.numero === p.numero); return '<button class="row" ' + (d ? 'data-act="' + (p.tipo === 'VENTA' ? 'venta' : 'apartado') + '" data-id="' + esc(d.id) + '"' : 'disabled') + '><div class="main"><div class="t">' + esc(p.cliente) + '</div><div class="d">' + fdate(p.fecha) + ' · ' + (p.tipo === 'VENTA' ? 'venta N° ' : 'apartado ') + esc(p.numero) + (p.metodo ? ' · ' + esc(title(p.metodo)) : '') + (p.vendedor ? ' · ' + esc(p.vendedor) : '') + '</div></div><div class="end"><div class="big">' + money(p.monto) + '</div>' + (p.tasa ? '<div class="d">' + bsFmt(p.monto * p.tasa) + '</div>' : '') + '</div></button>'; }).join('') + '</div>';
+  if (st.vs.length) h += '<h2 class="sec">Ventas del período</h2><div class="list">' + st.vs.slice().sort((a, b) => b.fecha.localeCompare(a.fecha)).map(v => { const t = vt(v); return '<button class="row" data-act="venta" data-id="' + esc(v.id) + '"><div class="main"><div class="t">' + esc(v.cliente) + '</div><div class="d">N° ' + esc(v.numero) + ' · ' + fdate(v.fecha) + (v.vendedor ? ' · ' + esc(v.vendedor) : '') + '</div></div><div class="end"><div class="big">' + money(t.total) + '</div>' + pill(t.estado) + '</div></button>'; }).join('') + '</div>';
+  if (st.gs.length) h += '<h2 class="sec">Gastos del período</h2><div class="list">' + st.gs.map(g => '<button class="row" data-act="gasto" data-id="' + esc(g.id) + '"><div class="main"><div class="t">' + esc(g.descripcion || g.categoria) + '</div><div class="d">' + fdate(g.fecha) + ' · ' + esc(g.categoria) + (g.metodo ? ' · ' + esc(title(g.metodo)) : '') + '</div></div><div class="end"><div class="big">' + money(num(g.monto)) + '</div></div></button>').join('') + '</div>';
+  h += '<p class="muted small" style="margin-top:14px">La caja cuenta los pagos registrados en la pestaña Pagos de tu hoja. Los cobros anteriores al 07/10/2026 solo aparecen si se registraron ahí.</p>';
+  return h;
+};
+function chartBars(labels, values, showEvery) {
+  const W = 340, H = 160, pl = 34, pb = 22, pt = 10, iw = W - pl - 6, ih = H - pb - pt;
+  const max = Math.max(10, ...values);
+  const step = Math.pow(10, Math.floor(Math.log10(max))); let top = Math.ceil(max / step) * step; if (top < max) top += step;
+  const sy = v => pt + ih - (Math.max(0, v) / top) * ih, bw = iw / labels.length;
+  let g = '';
+  for (let i = 0; i <= 2; i++) { const v = top * i / 2, y = sy(v); g += '<line x1="' + pl + '" x2="' + (W - 6) + '" y1="' + y + '" y2="' + y + '" style="stroke:var(--line)"/><text x="' + (pl - 4) + '" y="' + (y + 3) + '" text-anchor="end" style="fill:var(--muted)" font-size="9" font-family="JetBrains Mono, monospace">' + (v >= 1000 ? (v / 1000) + 'k' : v) + '</text>'; }
+  values.forEach((v, i) => {
+    const w = Math.max(2, bw * 0.62), x0 = pl + i * bw + (bw - w) / 2;
+    if (v > 0) g += '<rect x="' + x0 + '" y="' + sy(v) + '" width="' + w + '" height="' + (pt + ih - sy(v)) + '" rx="2" style="fill:var(--accent)"><title>' + esc(labels[i]) + ': ' + money(v) + '</title></rect>';
+    if (i % (showEvery || 1) === 0) g += '<text x="' + (pl + i * bw + bw / 2) + '" y="' + (H - 6) + '" text-anchor="middle" style="fill:var(--muted)" font-size="9.5">' + esc(labels[i]) + '</text>';
+  });
+  return '<div class="chart"><svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Ventas por período">' + g + '</svg></div>';
+}
+SUBS.stats = function () {
+  const k = S.statP, full = rangeOfP(k), r = [full[0], today()], pr = prevRange(k);
+  const a = periodStats(r), b = periodStats(pr);
+  let h = head('Estadísticas', true);
+  h += '<div class="chips">' + [['semana','Semana'],['mes','Mes'],['anio','Año']].map(([x, l]) => '<button class="chip" data-act="statP" data-p="' + x + '" aria-pressed="' + (k === x) + '">' + l + '</button>').join('') + '</div>';
+  h += '<p class="muted small" style="margin-top:0">Del ' + rangeTxt(r) + ', comparado con el mismo tramo del período anterior (' + rangeTxt(pr) + ').</p>';
+  const card = (l, cur, prev, f, inv) => '<div class="kpi"><div class="l">' + l + '</div><div class="v">' + f(cur) + '</div><div class="s">' + delta(cur, prev, inv) + ' · antes ' + f(prev) + '</div></div>';
+  const n0 = x => String(Math.round(x));
+  h += '<div class="kpis">' + card('Ventas', a.ventas, b.ventas, money) + card('N° de ventas', a.n, b.n, n0) + card('Ticket promedio', a.ticket, b.ticket, money) + card('Unidades', a.units, b.units, n0)
+    + card('Utilidad bruta', a.bruta, b.bruta, money) + card('Gastos', a.gastos, b.gastos, money, true) + card('Utilidad neta', a.neta, b.neta, money) + card('Cobrado', a.cobrado, b.cobrado, money) + '</div>';
+  // gráfico
+  let labels = [], vals = [], every = 1;
+  if (k === 'anio') { labels = MESES.map(m => m[0]); vals = new Array(12).fill(0); for (const v of a.vs) vals[+v.fecha.slice(5, 7) - 1] += vt(v).total; }
+  else { const days = Math.round((Date.parse(full[1]) - Date.parse(full[0])) / 864e5) + 1; for (let i = 0; i < days; i++) { const d = addDays(full[0], i); labels.push(k === 'semana' ? ['Lu','Ma','Mi','Ju','Vi','Sá','Do'][i] : String(+d.slice(8))); vals.push(a.vs.filter(v => v.fecha === d).reduce((s, v) => s + vt(v).total, 0)); } every = k === 'mes' ? 5 : 1; }
+  h += '<h2 class="sec">Ventas por ' + (k === 'anio' ? 'mes' : 'día') + '</h2>' + chartBars(labels, vals, every);
+  // vendedores
+  const byV = {}; for (const v of a.vs) { const n = v.vendedor || 'Sin asignar', t = vt(v); (byV[n] = byV[n] || { n: 0, total: 0, util: 0 }); byV[n].n++; byV[n].total += t.total; byV[n].util += t.util; }
+  const vend = Object.entries(byV).sort((x, y) => y[1].total - x[1].total);
+  h += '<h2 class="sec">Por vendedor</h2>' + (vend.length ? '<div class="tbl-wrap"><table><thead><tr><th>Vendedor</th><th>Ventas</th><th>Monto</th><th>Utilidad</th></tr></thead><tbody>' + vend.map(([n, x]) => '<tr><td>' + esc(n) + '</td><td>' + x.n + '</td><td>' + money(x.total) + '</td><td>' + money(x.util) + '</td></tr>').join('') + '</tbody></table></div>' : '<div class="card muted small">Sin ventas en este período.</div>');
+  // productos
+  const byP = {}, byT = {}, byC = {};
+  for (const v of a.vs) { for (const it of v.items) { const p = prod(it.codigo) || { tipo: '?', color: it.codigo }, m = num(it.cantidad) * num(it.precio) - num(it.descuento); (byP[it.codigo] = byP[it.codigo] || { q: 0, m: 0 }); byP[it.codigo].q += num(it.cantidad); byP[it.codigo].m += m; byT[p.tipo] = (byT[p.tipo] || 0) + m; } byC[v.cliente] = (byC[v.cliente] || 0) + vt(v).total; }
+  const topP = Object.entries(byP).sort((x, y) => y[1].q - x[1].q || y[1].m - x[1].m).slice(0, 8);
+  h += '<h2 class="sec">Productos más vendidos</h2>' + (topP.length ? '<div class="list">' + topP.map(([c, x]) => { const p = prod(c) || { codigo: c, color: c, tipo: '', presentacion: '' }; return '<button class="row" data-act="prod" data-c="' + esc(c) + '">' + swatch(p) + '<div class="main"><div class="t">' + esc(title(p.color)) + '</div><div class="d">' + esc(p.tipo + ' · ' + title(p.presentacion)) + ' · ' + money(x.m) + '</div></div><div class="end"><div class="big">' + x.q + '</div><div class="d">unid.</div></div></button>'; }).join('') + '</div>' : '<div class="card muted small">Sin ventas en este período.</div>');
+  const totT = Object.values(byT).reduce((s, x) => s + x, 0);
+  if (totT) h += '<h2 class="sec">Por material</h2><div class="card fg">' + Object.entries(byT).sort((x, y) => y[1] - x[1]).map(([t, m]) => '<div><div style="display:flex;justify-content:space-between;font-size:13px"><span>' + esc(t) + '</span><span class="num">' + money(m) + ' · ' + (m / totT * 100).toFixed(0) + '%</span></div><div class="bar"><i style="width:' + (m / totT * 100).toFixed(1) + '%"></i></div></div>').join('') + '</div>';
+  const topC = Object.entries(byC).sort((x, y) => y[1] - x[1]).slice(0, 5);
+  if (topC.length) h += '<h2 class="sec">Mejores clientes</h2><div class="list">' + topC.map(([n, m]) => { const c = clienteDe(n); return '<button class="row" ' + (c ? 'data-act="cliente" data-id="' + esc(c.id) + '"' : 'disabled') + '><div class="main"><div class="t">' + esc(n) + '</div></div><div class="end"><div class="big">' + money(m) + '</div></div></button>'; }).join('') + '</div>';
+  // sin movimiento
+  const lastSale = {}; for (const v of S.ventas) for (const it of v.items) if (!lastSale[it.codigo] || v.fecha > lastSale[it.codigo]) lastSale[it.codigo] = v.fecha;
+  const lastBuy = {}; for (const x of S.compras) if (!lastBuy[x.codigo] || x.fecha > lastBuy[x.codigo]) lastBuy[x.codigo] = x.fecha;
+  const quietos = Object.values(C.P).filter(e => e.disp > 0 && !e.p.missing).map(e => { const ref = lastSale[e.p.codigo] || lastBuy[e.p.codigo]; return { e, dias: ref ? daysSince(ref) : 0, nunca: !lastSale[e.p.codigo] }; }).filter(x => x.dias >= 30).sort((x, y) => y.dias - x.dias);
+  const inm = quietos.reduce((s, x) => s + x.e.valor, 0);
+  h += '<h2 class="sec">Sin movimiento (30 días o más)<span class="r num">' + money(inm) + ' parados</span></h2>' + (quietos.length ? '<div class="list">' + quietos.map(x => '<button class="row" data-act="prod" data-c="' + esc(x.e.p.codigo) + '">' + swatch(x.e.p) + '<div class="main"><div class="t">' + esc(title(x.e.p.color)) + ' <span class="muted small">' + esc(title(x.e.p.presentacion)) + '</span></div><div class="d">' + x.e.disp + ' disp. · ' + x.dias + ' días ' + (x.nunca ? 'sin vender' : 'desde la última venta') + '</div></div><div class="end"><div class="big" style="font-size:15px">' + money(x.e.valor) + '</div></div></button>').join('') + '</div>' : '<div class="card muted small">Todo tu inventario se ha movido en el último mes.</div>');
+  return h;
+};
+function tasaForm() {
+  const c = cfg();
+  openSheet('Tasa del día', '<form class="fg" data-form="tasa"><p class="muted small" style="margin:0">Se guarda en tu hoja (Parámetros) y la usa la app para mostrar precios y cobros en bolívares.' + (c.tasa ? ' Tasa actual: <b>' + tasaFmt(c.tasa) + '</b>' + (c.tasaFecha ? ', del ' + fdate(c.tasaFecha) : '') + '.' : '') + '</p>'
+    + '<div class="f"><label class="lb" for="tz_v">Bolívares por dólar</label><input id="tz_v" name="tasa" inputmode="decimal" required placeholder="Ej. 205,50" value="' + (c.tasa ? tasaFmt(c.tasa).replace(/\./g, '') : '') + '"></div>'
+    + '<p class="small" style="margin:0">Consulta la tasa oficial en <a href="https://www.bcv.org.ve/" target="_blank" rel="noopener" style="color:var(--accent)">bcv.org.ve</a>.</p>'
+    + '<div class="err" id="formErr"></div><button class="btn pri" type="submit">Guardar tasa</button></form>');
+}
+function tasaCard() {
+  const c = cfg(), hoy = c.tasaFecha === today();
+  if (!c.tasa) return '<button class="alert p-warn" data-act="tasa"><b>Pon la tasa del día</b>&nbsp;para ver precios y cobros en bolívares ›</button>';
+  return '<button class="alert ' + (hoy ? 'p-mut' : 'p-warn') + '" data-act="tasa">Tasa: <b>&nbsp;' + tasaFmt(c.tasa) + ' Bs/$&nbsp;</b>' + (hoy ? '· actualizada hoy' : '· es del ' + fdate(c.tasaFecha) + ', actualízala ›') + '</button>';
+}
+/* ---- asistente ---- */
+function negocioDatos() {
+  const R = resumen(new Date().getFullYear());
+  const lastSale = {}; for (const v of S.ventas) for (const it of v.items) if (!lastSale[it.codigo] || v.fecha > lastSale[it.codigo]) lastSale[it.codigo] = v.fecha;
+  return {
+    hoy: today(), tasa_bs_por_dolar: cfg().tasa || null, tasa_fecha: cfg().tasaFecha || null,
+    parametros: { tax: cfg().tax, stock_minimo: cfg().stockMin, meses_cobertura: cfg().mesesCobertura },
+    productos: Object.values(C.P).filter(e => !e.p.missing).map(e => ({ codigo: e.p.codigo, producto: e.p.tipo + ' ' + title(e.p.color) + ' (' + title(e.p.presentacion) + ')', precio: e.precio, costo_total_unidad: e.totalProm === null ? null : r2(e.totalProm), margen: e.margen === null ? null : r2(e.margen * 100), disponible: e.disp, en_camino: e.enCamino, apartado: e.apartado, libre_para_vender: e.libre, vendidas_total: e.vendidas, vendidas_90_dias: e.vend90, ultima_venta: lastSale[e.p.codigo] || null, estado: e.estado, sugerido_pedir: e.sugerido })),
+    ventas: S.ventas.map(v => { const t = vt(v); return { n: v.numero, fecha: v.fecha, cliente: v.cliente, vendedor: v.vendedor || null, metodo: v.metodo || null, items: v.items.map(i => [i.codigo, i.cantidad, i.precio, i.descuento]), total: r2(t.total), costo: r2(t.costo), utilidad: r2(t.util), pagado: r2(t.pagado), saldo: t.saldo }; }),
+    apartados: S.apartados.map(a => { const t = apTotals(a); return { n: a.numero, fecha: a.fecha, cliente: a.cliente, estado: a.estado, items: a.items.map(i => [i.codigo, i.cantidad, i.precio, i.descuento]), total: r2(t.total), abonado: r2(t.pagado) }; }),
+    pagos_recibidos: S.pagos.map(p => ({ fecha: p.fecha, tipo: p.tipo, n: p.numero, cliente: p.cliente, monto: p.monto, metodo: p.metodo, tasa: p.tasa || null })),
+    gastos: S.gastos.map(g => ({ fecha: g.fecha, categoria: g.categoria, descripcion: g.descripcion, monto: num(g.monto), metodo: g.metodo || null })),
+    pedidos_en_camino: S.encamino.filter(x => x.estado !== 'RECIBIDO').map(x => ({ fecha: x.fecha, pedido: x.pedido, codigo: x.codigo, cantidad: x.cantidad, subtotal: x.subtotal })),
+    compras_recibidas: S.compras.map(x => ({ fecha: x.fecha, codigo: x.codigo, cantidad: x.cantidad, total_con_tax_y_envio: r2(compraLine(x).total) })),
+    clientes: clientesStats().map(s => ({ nombre: s.c.nombre, compras: s.n, total: r2(s.total), debe: r2(s.saldo), ultima: s.ultima || null, tiene_telefono: !!s.c.telefono })),
+    resumen_mensual_este_anio: R.m.map((x, i) => ({ mes: MESES[i], ventas: r2(x.ventas), costo: r2(x.costo), gastos: r2(x.gastos), utilidad_neta: r2(x.neta), compras: r2(x.compras) })).filter(x => x.ventas || x.gastos || x.compras)
+  };
+}
+const ASK_RULES = 'Eres el asistente de StratoFil3D, un negocio de reventa de filamentos y accesorios Bambu Lab en Maracaibo, Venezuela. Compra a Bambu Lab US (7% de tax y envío por courier desde Miami) y vende en dólares; cobra en efectivo, Zelle, Pago Móvil, transferencia en bolívares y Binance/USDT. Te paso abajo TODOS los datos actuales del negocio en JSON, leídos de su hoja de cálculo. Montos en dólares salvo que diga Bs.\n\nReglas: responde en español de Venezuela, claro y breve (máximo unos 150 palabras salvo que pidan detalle). Calcula con cuidado a partir de los datos y da cifras exactas con $ y 2 decimales. Si algo no está en los datos, dilo en vez de suponer. Cuando ayude, termina con una recomendación concreta. Formato: párrafos cortos y listas con "- "; puedes usar **negritas**. No uses tablas.';
+const ASK_SUG = ['¿Qué debería pedir en mi próximo pedido a Bambu Lab?', '¿Quién me debe, cuánto y desde cuándo?', '¿Cuál es mi producto más rentable?', '¿Cómo van las ventas este mes comparado con el anterior?', '¿Qué productos están parados y qué hago con ellos?', '¿Cuánto dinero tengo invertido en inventario?'];
+function fmtAI(t) {
+  const lines = esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').split('\n');
+  let out = '', inList = false;
+  for (const l of lines) {
+    const m = l.match(/^\s*(?:[-•*]|\d+[.)])\s+(.*)$/);
+    if (m) { if (!inList) { out += '<ul>'; inList = true; } out += '<li>' + m[1] + '</li>'; continue; }
+    if (inList) { out += '</ul>'; inList = false; }
+    const hh = l.match(/^#{1,4}\s+(.*)$/);
+    out += hh ? '<p><b>' + hh[1] + '</b></p>' : (l.trim() ? '<p>' + l + '</p>' : '');
+  }
+  return out + (inList ? '</ul>' : '');
+}
+SUBS.asistente = function () {
+  let h = head('Pregúntale a tu negocio', true);
+  if (!sampleCap) return h + '<div class="card empty"><b>No disponible aquí</b>El asistente funciona en la versión de la app que abres desde Claude.</div>';
+  h += '<p class="muted small" style="margin-top:-6px">Responde con los datos reales de tu hoja. Cada pregunta usa tu plan de Claude.</p>';
+  h += '<div class="chat">' + S.chat.map((m, i) => '<div class="msg ' + (m.role === 'user' ? 'me' : 'ai') + '"' + (m.role !== 'user' && i === S.chat.length - 1 ? ' id="aiLast"' : '') + '>' + (m.role === 'user' ? esc(m.text) : (m.text ? fmtAI(m.text) : '<span class="muted">' + (m.err ? '' : 'Pensando…') + '</span>')) + (m.err ? '<p class="err" style="margin:6px 0 0">' + esc(m.err) + '</p>' : '') + '</div>').join('') + '</div>';
+  if (!S.chat.length) h += '<div class="sugs">' + ASK_SUG.map(q => '<button class="chip" data-act="askS" data-q="' + esc(q) + '">' + esc(q) + '</button>').join('') + '</div>';
+  h += '<form class="ask" data-form="ask"><textarea id="askQ" name="q" rows="2" placeholder="Escribe tu pregunta…" aria-label="Tu pregunta">' + esc(S.askDraft) + '</textarea>'
+    + (S.asking ? '<button class="btn" type="button" data-act="askStop">Detener</button>' : '<button class="btn pri" type="submit">Preguntar</button>') + '</form>';
+  if (S.chat.length && !S.asking) h += '<div class="btns" style="margin-top:8px"><button class="btn sm ghost" data-act="askClear">Nueva conversación</button></div>';
+  return h;
+};
+async function ask(q) {
+  q = String(q || '').trim(); if (!q || S.asking || !sampleCap) return;
+  const hist = S.chat.filter(m => m.text && !m.err).slice(-6).map(m => ({ role: m.role, content: m.text }));
+  S.chat.push({ role: 'user', text: q }); const msg = { role: 'assistant', text: '' }; S.chat.push(msg);
+  S.askDraft = ''; const ctl = new AbortController(); S.asking = ctl; render();
+  const turns = [{ role: 'user', content: ASK_RULES + '\n\nDATOS DEL NEGOCIO (JSON):\n' + JSON.stringify(negocioDatos()) }];
+  for (const h of hist) turns.push(h);
+  turns.push({ role: 'user', content: q });
+  try {
+    const res = await sampleCap(turns, { cache: false, signal: ctl.signal, onText: ({ text }) => { msg.text = text; const el = document.getElementById('aiLast'); if (el) el.innerHTML = fmtAI(text); } });
+    msg.text = res.text; if (res.truncated) msg.err = 'La respuesta quedó cortada. Pide algo más puntual.';
+  } catch (e) {
+    const c = e && e.code; msg.text = (e && e.text) || '';
+    if (c === 'cancelled') { if (!msg.text) msg.err = 'Detenido.'; }
+    else if (['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(c)) msg.err = 'La app no tiene permiso para usar Claude. Acéptalo cuando te lo pregunte o actívalo en los permisos de la app.';
+    else if (c === 'rate_limited') msg.err = 'Llegaste al límite de uso por ahora. Intenta más tarde.';
+    else if (c === 'session_expired') msg.err = 'Tu sesión de Claude venció. Vuelve a iniciar sesión.';
+    else if (c === 'prompt_too_large') msg.err = 'Hay demasiados datos para una sola pregunta.';
+    else if (c === 'refused') { msg.text = ''; msg.err = 'No puedo responder esa pregunta.'; }
+    else msg.err = 'No pude responder ahora. Intenta de nuevo.';
+  } finally { S.asking = null; render(); }
 }
 
 /* ============ hoja (modal) ============ */
@@ -802,7 +1068,7 @@ function prodDetail(code) {
   let b = '<div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">' + swatch(p).replace('class="sw', 'style="width:52px;height:52px;background:' + esc(hexOf(p)) + '" class="sw') + '<div><div style="font-weight:700;font-size:17px">' + esc(title(p.color)) + '</div><div class="muted small"><span class="mono">' + esc(p.codigo) + '</span> · ' + esc(p.tipo) + ' · ' + esc(title(p.presentacion)) + '</div></div><div style="margin-left:auto">' + pill(e.estado) + '</div></div>';
   b += '<div class="card grid3">' + st('Disponible', e.disp) + st('En camino', e.enCamino) + st('Apartado', e.apartado) + st('Compradas', e.compradas) + st('Vendidas', e.vendidas) + st('Libre p/ vender', e.libre) + '</div>';
   b += '<h2 class="sec">Costo promedio por unidad</h2><div class="card grid2">' + st('Costo', e.costoProm === null ? '—' : money(e.costoProm)) + st('Tax', e.taxProm === null ? '—' : money(e.taxProm)) + st('Envío', e.envProm === null ? '—' : money(e.envProm)) + st('Costo total', e.totalProm === null ? '—' : money(e.totalProm)) + '</div>';
-  b += '<h2 class="sec">Precio y ganancia</h2><div class="card grid2">' + st('Precio', money(e.precio)) + st('Utilidad', e.util === null ? '—' : money(e.util)) + st('Markup', pct(e.markup)) + st('Margen', pct(e.margen)) + st('Valor en inventario', money(e.valor)) + st('Medidas (in)', num(p.largo) ? p.largo + '×' + p.ancho + '×' + p.alto : '—') + '</div>';
+  b += '<h2 class="sec">Precio y ganancia</h2><div class="card grid2">' + st('Precio', money(e.precio) + (cfg().tasa ? '<div class="muted small">' + enBs(e.precio) + '</div>' : '')) + st('Utilidad', e.util === null ? '—' : money(e.util)) + st('Markup', pct(e.markup)) + st('Margen', pct(e.margen)) + st('Valor en inventario', money(e.valor)) + st('Medidas (in)', num(p.largo) ? p.largo + '×' + p.ancho + '×' + p.alto : '—') + '</div>';
   if (e.totalProm === null) b += '<p class="muted small">El costo aparece cuando registres la primera compra recibida de este producto.</p>';
   if (ventas.length) b += '<h2 class="sec">Últimas ventas</h2><div class="list">' + ventas.map(v => { const it = v.items.find(i => i.codigo === code); return '<button class="row" data-act="venta" data-id="' + esc(v.id) + '"><div class="main"><div class="t">' + esc(v.cliente) + '</div><div class="d">' + fdate(v.fecha) + ' · N° ' + esc(v.numero) + '</div></div><div class="end num">' + num(it.cantidad) + ' × ' + money(num(it.precio)) + '</div></button>'; }).join('') + '</div>';
   if (can() && !p.missing) b += '<div class="btns full" style="margin-top:14px"><button class="btn pri" data-act="editProd" data-c="' + esc(code) + '">Editar producto</button>' + (e.compradas || e.vendidas || e.enCamino || e.apartado ? '' : '<button class="btn danger" data-act="delProd" data-c="' + esc(code) + '">Eliminar</button>') + '</div>';
@@ -841,16 +1107,36 @@ function ventaForm(mode, doc) {
   const v = doc || { fecha: today(), cliente: '', metodo: '', tasa: '', notas: '', items: [] };
   const items = v.items && v.items.length ? v.items : [null];
   lineSeq = 0;
-  openSheet((doc ? 'Editar ' : 'Nuevo ') + (isV ? 'venta' : 'apartado') + (doc ? ' ' + (isV ? 'N° ' : '') + v.numero : ''), '<form class="fg" data-form="' + mode + '" data-id="' + esc(doc ? doc.id : '') + '">'
+  openSheet((doc ? 'Editar ' : (isV ? 'Nueva ' : 'Nuevo ')) + (isV ? 'venta' : 'apartado') + (doc ? ' ' + (isV ? 'N° ' : '') + v.numero : ''), '<form class="fg" data-form="' + mode + '" data-id="' + esc(doc ? doc.id : '') + '">'
     + '<div class="fg2"><div class="f"><label class="lb" for="v_f">Fecha</label><input id="v_f" name="fecha" type="date" required value="' + esc(v.fecha) + '"></div><div class="f"><label class="lb" for="v_c">Cliente</label><input id="v_c" name="cliente" list="cliList" required autocomplete="off" value="' + esc(v.cliente) + '"><datalist id="cliList">' + S.clientes.map(x => '<option value="' + esc(x.nombre) + '">').join('') + '</datalist></div></div>'
     + '<div class="f" id="telBox" hidden><label class="lb" for="v_t">WhatsApp del cliente nuevo (opcional)</label><input id="v_t" name="telefono" inputmode="tel" placeholder="0414…"></div>'
+    + pickerHtml(mode)
     + '<div class="f"><span>Productos</span><div id="lines" class="fg">' + items.map(it => lineHtml(it, mode)).join('') + '</div></div>'
     + '<div class="btns"><button type="button" class="btn sm" data-act="addLine" data-m="' + mode + '">+ Otro producto</button><span style="flex:1"></span><input id="v_du" inputmode="decimal" placeholder="Desc. por unidad $" aria-label="Descuento por unidad" style="width:150px;padding:7px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface)"><button type="button" class="btn sm ghost" data-act="applyDu">Aplicar</button></div>'
     + '<div class="fg2"><div class="f"><label class="lb" for="v_m">Método de pago</label><select id="v_m" name="metodo"><option value="">—</option>' + c.metodos.map(m => '<option' + (m.n === v.metodo ? ' selected' : '') + '>' + esc(m.n) + '</option>').join('') + '</select></div>'
-    + (isV ? '<div class="f"><label class="lb" for="v_tasa">Tasa Bs/$ (opcional)</label><input id="v_tasa" name="tasa" inputmode="decimal" value="' + esc(v.tasa || '') + '"></div>' : '<div></div>') + '</div>'
+    + (isV ? '<div class="f"><label class="lb" for="v_tasa">Tasa Bs/$</label><input id="v_tasa" name="tasa" inputmode="decimal" value="' + esc(doc ? (v.tasa || '') : (c.tasa ? tasaFmt(c.tasa).replace(/\./g, '') : '')) + '"></div>' : '<div></div>') + '</div>'
     + (doc ? '' : '<div class="f"><label class="lb" for="v_pag">' + (isV ? 'Pagó ahora ($)' : 'Abono inicial ($)') + '</label><div style="display:flex;gap:8px"><input id="v_pag" name="pagado" inputmode="decimal" placeholder="0"><button type="button" class="btn sm ghost" data-act="payAll">Todo</button></div></div>')
     + '<div class="f"><label class="lb" for="v_n">Notas</label><textarea id="v_n" name="notas" placeholder="Ej. descuento de amigo, entrega a domicilio…">' + esc(v.notas || '') + '</textarea></div>'
     + '<div class="sumbox" id="sumbox"></div><div class="err" id="formErr"></div><button class="btn pri" type="submit">' + (doc ? 'Guardar cambios' : (isV ? 'Registrar venta' : 'Registrar apartado')) + '</button></form>', () => { updateLines(); });
+}
+function pickerHtml(mode) {
+  const list = S.productos.map(p => C.P[p.codigo]).filter(e => e && (mode === 'venta' ? e.disp > 0 : (e.disp + e.enCamino - e.apartado > 0)))
+    .sort((a, b) => b.vendidas - a.vendidas || a.p.color.localeCompare(b.p.color));
+  if (!list.length) return '';
+  return '<div class="f"><span>Venta rápida: toca un producto para agregarlo</span><input class="search" id="pk_q" type="search" placeholder="Buscar color o código" style="margin:0" autocomplete="off"><div class="pick-grid" id="pkGrid">'
+    + list.map(e => '<button type="button" class="pick" data-act="pick" data-m="' + mode + '" data-c="' + esc(e.p.codigo) + '" data-s="' + esc((e.p.codigo + ' ' + e.p.color + ' ' + e.p.tipo + ' ' + e.p.presentacion).toLowerCase()) + '">' + swatch(e.p) + '<span class="pk-t"><b>' + esc(title(e.p.color)) + '</b><small>' + esc(e.p.tipo.replace('PLA ', '') + ' · ' + (e.p.presentacion === 'CON SPOOL' ? 'Spool' : title(e.p.presentacion))) + ' · ' + (mode === 'venta' ? e.disp : e.disp + e.enCamino - e.apartado) + '</small></span><span class="pk-n" data-n></span></button>').join('')
+    + '</div></div>';
+}
+function pickAdd(code, mode) {
+  const lines = [...document.querySelectorAll('#lines [data-line]')];
+  let el = lines.find(l => l.querySelector('.l-p').value === code);
+  if (el) { const q = el.querySelector('.l-q'); q.value = num(q.value) + 1; }
+  else {
+    el = lines.find(l => !l.querySelector('.l-p').value);
+    if (el) { el.querySelector('.l-p').value = code; el.querySelector('.l-q').value = 1; const pr = el.querySelector('.l-pr'); if (pr) pr.value = ''; }
+    else document.querySelector('#lines').insertAdjacentHTML('beforeend', lineHtml({ codigo: code, cantidad: 1 }, mode));
+  }
+  updateLines();
 }
 function readLines(mode) {
   return [...document.querySelectorAll('#lines [data-line]')].map(el => {
@@ -889,21 +1175,38 @@ function updateLines() {
   if (isSale) sb.innerHTML = '<div><span>Subtotal</span><span class="num">' + money(bruto) + '</span></div>' + (desc ? '<div><span>Descuentos</span><span class="num">-' + money(desc) + '</span></div>' : '') + '<div class="tt"><span>Total</span><span class="num">' + money(total) + '</span></div><div class="muted small"><span>Ganancia estimada</span><span class="num">' + money(total - costo - total * comPct($('#v_m') ? $('#v_m').value : '')) + '</span></div>';
   else sb.innerHTML = '<div><span>Subtotal sin tax</span><span class="num">' + money(sub) + '</span></div><div><span>Tax ' + r2(cfg().tax * 100) + '%</span><span class="num">' + money(sub * cfg().tax) + '</span></div><div class="tt"><span>Total con tax</span><span class="num">' + money(sub * (1 + cfg().tax)) + '</span></div>';
   sb.dataset.total = total;
+  if (isSale) {
+    const ts = $('#v_tasa'), tz = ts ? num(ts.value) : cfg().tasa;
+    if (tz && total) sb.insertAdjacentHTML('beforeend', '<div class="muted"><span>En bolívares (tasa ' + tasaFmt(tz) + ')</span><span class="num">' + bsFmt(total * tz) + '</span></div>');
+    const cnt = {}; for (const { o } of readLines(mode)) if (o.codigo) cnt[o.codigo] = (cnt[o.codigo] || 0) + o.cantidad;
+    document.querySelectorAll('#pkGrid .pick').forEach(b => { const n = cnt[b.dataset.c] || 0; b.classList.toggle('on', n > 0); b.querySelector('[data-n]').textContent = n ? '×' + n : ''; });
+  }
   const ci = $('#v_c'), tb = $('#telBox'); if (ci && tb) tb.hidden = !ci.value.trim() || !!clienteDe(ci.value);
 }
 
 function ventaDetail(id) {
   const v = S.ventas.find(x => x.id === id); if (!v) return closeSheet();
   const t = vt(v), cl = clienteDe(v.cliente);
-  let b = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div style="font-weight:700;font-size:17px">' + esc(v.cliente) + '</div><div class="muted small">' + fdate(v.fecha) + (v.metodo ? ' · ' + esc(v.metodo) : '') + (v.tasa ? ' · tasa ' + esc(v.tasa) + ' Bs/$' : '') + '</div></div>' + pill(t.estado) + '</div>';
+  let b = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div style="font-weight:700;font-size:17px">' + esc(v.cliente) + '</div><div class="muted small">' + fdate(v.fecha) + (v.metodo ? ' · ' + esc(v.metodo) : '') + (v.tasa ? ' · tasa ' + tasaFmt(v.tasa) : '') + (v.vendedor ? ' · vendió ' + esc(v.vendedor) : '') + '</div></div>' + pill(t.estado) + '</div>';
   b += '<div class="card items" style="margin-top:12px">' + (v.items || []).map(it => { const p = prod(it.codigo) || { color: it.codigo }; return '<div class="it">' + swatch(p) + '<div class="main"><div style="font-weight:600">' + esc(title(p.color)) + '</div><div class="muted small">' + esc((p.tipo || '') + ' · ' + title(p.presentacion || '')) + ' · ' + num(it.cantidad) + ' × ' + money(num(it.precio)) + (num(it.descuento) ? ' − ' + money(num(it.descuento)) : '') + '</div></div><div class="num">' + money(num(it.cantidad) * num(it.precio) - num(it.descuento)) + '</div></div>'; }).join('') + '</div>';
-  b += '<div class="sumbox" style="margin-top:10px">' + (t.desc ? '<div><span>Subtotal</span><span class="num">' + money(t.bruto) + '</span></div><div><span>Descuentos</span><span class="num">-' + money(t.desc) + '</span></div>' : '') + '<div class="tt"><span>Total</span><span class="num">' + money(t.total) + '</span></div>' + (v.tasa ? '<div class="muted"><span>En bolívares</span><span class="num">Bs ' + (t.total * num(v.tasa)).toFixed(2) + '</span></div>' : '') + '<div><span>Pagado</span><span class="num">' + money(t.pagado) + '</span></div><div style="font-weight:700;color:' + (t.saldo ? 'var(--bad)' : 'var(--ok)') + '"><span>Saldo</span><span class="num">' + money(t.saldo) + '</span></div></div>';
+  b += '<div class="sumbox" style="margin-top:10px">' + (t.desc ? '<div><span>Subtotal</span><span class="num">' + money(t.bruto) + '</span></div><div><span>Descuentos</span><span class="num">-' + money(t.desc) + '</span></div>' : '') + '<div class="tt"><span>Total</span><span class="num">' + money(t.total) + '</span></div>' + (v.tasa ? '<div class="muted"><span>En bolívares</span><span class="num">' + bsFmt(t.total * num(v.tasa)) + '</span></div>' : '') + '<div><span>Pagado</span><span class="num">' + money(t.pagado) + '</span></div><div style="font-weight:700;color:' + (t.saldo ? 'var(--bad)' : 'var(--ok)') + '"><span>Saldo</span><span class="num">' + money(t.saldo) + '</span></div></div>';
   b += '<div class="card grid3" style="margin-top:10px"><div class="stat"><div class="l">Costo</div><div class="v">' + money(t.costo) + '</div></div><div class="stat"><div class="l">Utilidad</div><div class="v">' + money(t.util) + '</div></div><div class="stat"><div class="l">Margen</div><div class="v">' + pct(t.total ? t.util / t.total : null) + '</div></div></div>';
+  b += pagosList(ventaPagos(v), t.pagado);
   if (v.notas) b += '<p class="small"><b>Notas:</b> ' + esc(v.notas) + '</p>';
   b += '<p class="muted small">Filas ' + v.rows[0] + (v.rows.length > 1 ? '–' + v.rows[v.rows.length - 1] : '') + ' de la hoja Ventas.</p>';
   b += '<div class="btns full" style="margin-top:8px">' + (can() && t.saldo > 0 ? '<button class="btn pri" data-act="pago" data-id="' + esc(v.id) + '">Registrar pago</button>' : '') + '<button class="btn" data-act="recibo" data-k="venta" data-id="' + esc(v.id) + '">Recibo</button><a class="btn" target="_blank" rel="noopener" href="' + esc(waLink(cl && cl.telefono, reciboTexto('venta', v))) + '">WhatsApp</a></div>';
   if (can()) b += '<div class="btns full" style="margin-top:8px"><button class="btn ghost" data-act="editVenta" data-id="' + esc(v.id) + '">Editar</button><button class="btn danger" data-act="askDel" data-k="ventas" data-id="' + esc(v.id) + '">Eliminar</button></div>';
   openSheet('Venta N° ' + v.numero, b);
+}
+function ventaPagos(v) {
+  const ap = (String(v.notas || '').match(/apartado (A-\d+)/) || [])[1];
+  return pagosDe('VENTA', v.numero).concat(ap ? pagosDe('APARTADO', ap) : []).sort((a, b) => a.fecha.localeCompare(b.fecha));
+}
+function pagosList(list, pagado) {
+  if (!list.length && !pagado) return '';
+  const sum = list.reduce((s, p) => s + p.monto, 0), rest = r2(pagado - sum);
+  return '<h2 class="sec">Pagos recibidos</h2><div class="list">' + list.map(p => '<div class="row" style="cursor:default"><div class="main"><div class="t">' + money(p.monto) + (p.tasa ? ' <span class="muted small">· ' + bsFmt(p.monto * p.tasa) + '</span>' : '') + '</div><div class="d">' + fdate(p.fecha) + (p.metodo ? ' · ' + esc(title(p.metodo)) : '') + (p.tipo === 'APARTADO' ? ' · abono del apartado ' + esc(p.numero) : '') + (p.vendedor ? ' · lo registró ' + esc(p.vendedor) : '') + '</div></div></div>').join('')
+    + (rest > 0.005 ? '<div class="row" style="cursor:default"><div class="main"><div class="t">' + money(rest) + '</div><div class="d">Pagos anteriores sin detalle</div></div></div>' : '') + '</div>';
 }
 function apartadoDetail(id) {
   const a = S.apartados.find(x => x.id === id); if (!a) return closeSheet();
@@ -912,6 +1215,7 @@ function apartadoDetail(id) {
   let b = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div style="font-weight:700;font-size:17px">' + esc(a.cliente) + '</div><div class="muted small">' + fdate(a.fecha) + '</div></div>' + pill(est) + '</div>';
   b += '<div class="card items" style="margin-top:12px">' + (a.items || []).map(it => { const p = prod(it.codigo) || { color: it.codigo }, e = C.P[it.codigo] || {}; const ok = (e.disp || 0) >= num(it.cantidad); return '<div class="it">' + swatch(p) + '<div class="main"><div style="font-weight:600">' + esc(title(p.color)) + '</div><div class="muted small">' + esc((p.tipo || '') + ' · ' + title(p.presentacion || '')) + ' · ' + num(it.cantidad) + ' × ' + money(num(it.precio)) + (num(it.descuento) ? ' − ' + money(num(it.descuento)) : '') + (est === 'APARTADO' ? ' · ' + (ok ? '<b style="color:var(--ok)">en existencia</b>' : 'por llegar') : '') + '</div></div><div class="num">' + money(num(it.cantidad) * num(it.precio) - num(it.descuento)) + '</div></div>'; }).join('') + '</div>';
   b += '<div class="sumbox" style="margin-top:10px"><div class="tt"><span>Total</span><span class="num">' + money(t.total) + '</span></div><div><span>Abonado</span><span class="num">' + money(t.pagado) + '</span></div><div style="font-weight:700"><span>Resta</span><span class="num">' + money(t.saldo) + '</span></div></div>';
+  b += pagosList(pagosDe('APARTADO', a.numero), t.pagado);
   if (a.notas) b += '<p class="small"><b>Notas:</b> ' + esc(a.notas) + '</p>';
   if (a.ventaNumero) b += '<p class="small">Entregado como venta N° ' + esc(a.ventaNumero) + '.</p>';
   if (est === 'APARTADO') {
@@ -925,8 +1229,9 @@ function apartadoDetail(id) {
 function pagoForm(kind, id) {
   const d = (kind === 'ventas' ? S.ventas : S.apartados).find(x => x.id === id); if (!d) return;
   const t = kind === 'ventas' ? vt(d) : apTotals(d);
-  openSheet(kind === 'ventas' ? 'Pago · ' + d.cliente : 'Abono · ' + d.cliente, '<form class="fg" data-form="pago" data-k="' + kind + '" data-id="' + esc(id) + '"><p class="muted small" style="margin:0">Debe ' + money(t.saldo) + ' de ' + money(t.total) + '.</p><div class="fg2"><div class="f"><label class="lb" for="pg_m">Monto ($)</label><input id="pg_m" name="monto" inputmode="decimal" required value="' + t.saldo.toFixed(2) + '"></div><div class="f"><label class="lb" for="pg_f">Fecha</label><input id="pg_f" type="date" name="fecha" value="' + today() + '"></div></div><div class="f"><label class="lb" for="pg_me">Método</label><select id="pg_me" name="metodo"><option value="">—</option>' + cfg().metodos.map(m => '<option' + (m.n === d.metodo ? ' selected' : '') + '>' + esc(m.n) + '</option>').join('') + '</select></div><div class="err" id="formErr"></div><button class="btn pri" type="submit">Guardar</button></form>');
+  openSheet(kind === 'ventas' ? 'Pago · ' + d.cliente : 'Abono · ' + d.cliente, '<form class="fg" data-form="pago" data-k="' + kind + '" data-id="' + esc(id) + '"><p class="muted small" style="margin:0">Debe ' + money(t.saldo) + ' de ' + money(t.total) + '.</p><div class="fg2"><div class="f"><label class="lb" for="pg_m">Monto ($)</label><input id="pg_m" name="monto" inputmode="decimal" required value="' + t.saldo.toFixed(2) + '"></div><div class="f"><label class="lb" for="pg_f">Fecha</label><input id="pg_f" type="date" name="fecha" value="' + today() + '"></div></div><div class="f"><label class="lb" for="pg_me">Método</label><select id="pg_me" name="metodo"><option value="">—</option>' + cfg().metodos.map(m => '<option' + (m.n === d.metodo ? ' selected' : '') + '>' + esc(m.n) + '</option>').join('') + '</select></div><div class="f"><label class="lb" for="pg_t">Tasa Bs/$ (si pagó en bolívares)</label><input id="pg_t" name="tasa" inputmode="decimal" value="' + (cfg().tasa ? tasaFmt(cfg().tasa).replace(/\./g, '') : '') + '"></div><p class="muted small" id="pgBs" style="margin:0"></p><div class="err" id="formErr"></div><button class="btn pri" type="submit">Guardar</button></form>', () => pgBs());
 }
+function pgBs() { const m = $('#pg_m'), t = $('#pg_t'), o = $('#pgBs'); if (m && t && o) o.textContent = num(t.value) && num(m.value) ? 'Equivale a ' + bsFmt(num(m.value) * num(t.value)) : ''; }
 function pedidoForm(kind, group) {
   const isC = kind === 'compras', c = cfg();
   const g = group || { fecha: today(), pedido: '', proveedor: c.proveedores[0] || '', notas: '', lines: [null] };
@@ -983,7 +1288,8 @@ function reciboTexto(kind, d) {
   const n = cfg().negocio, isV = kind === 'venta', t = isV ? vt(d) : apTotals(d);
   let s = '*' + n.nombre.toUpperCase() + '*\n' + (isV ? 'Recibo de venta N° ' + d.numero : 'Comprobante de apartado ' + d.numero) + '\nFecha: ' + fdate(d.fecha) + '\nCliente: ' + d.cliente + '\n\n';
   s += (d.items || []).map(it => '• ' + num(it.cantidad) + ' × ' + prodName(it.codigo) + ' — ' + money(num(it.cantidad) * num(it.precio) - num(it.descuento)) + (num(it.descuento) ? ' (desc. ' + money(num(it.descuento)) + ')' : '')).join('\n');
-  s += '\n\n*Total: ' + money(t.total) + '*\n' + (isV ? 'Pagado' : 'Abonado') + ': ' + money(t.pagado) + '\n' + (t.saldo > 0 ? (isV ? 'Saldo pendiente' : 'Resta por pagar') + ': ' + money(t.saldo) + '\n' : (isV ? 'Pagado completo. ¡Gracias!\n' : ''));
+  const tzR = isV ? num(d.tasa) : cfg().tasa;
+  s += '\n\n*Total: ' + money(t.total) + '*\n' + (tzR ? 'En bolívares: ' + bsFmt(t.total * tzR) + ' (tasa ' + tasaFmt(tzR) + ')\n' : '') + (isV ? 'Pagado' : 'Abonado') + ': ' + money(t.pagado) + '\n' + (t.saldo > 0 ? (isV ? 'Saldo pendiente' : 'Resta por pagar') + ': ' + money(t.saldo) + '\n' : (isV ? 'Pagado completo. ¡Gracias!\n' : ''));
   if (!isV) s += 'Los productos quedan reservados a tu nombre.\n';
   return s + '\nGracias por tu compra en ' + n.nombre + '.';
 }
@@ -995,7 +1301,7 @@ function wrapText(ctx, text, maxW) { const words = String(text).split(' '); cons
 function drawRecibo(cv, kind, d) {
   const isV = kind === 'venta', t = isV ? vt(d) : apTotals(d), n = cfg().negocio;
   const W = 1080, items = d.items || [];
-  const H = 640 + items.length * 120 + (t.desc ? 60 : 0) + (isV ? 0 : 60);
+  const H = 640 + items.length * 120 + (t.desc ? 60 : 0) + (isV ? 0 : 60) + ((isV ? num(d.tasa) : cfg().tasa) ? 52 : 0);
   cv.width = W; cv.height = H; const x = cv.getContext('2d');
   const DARK = '#0F1210', LIME = '#C6F432', INK = '#141A05', PAPER = '#FBFCF8', GREY = '#5D665C', LINE = '#DDE3D6';
   x.fillStyle = PAPER; x.fillRect(0, 0, W, H);
@@ -1023,6 +1329,7 @@ function drawRecibo(cv, kind, d) {
   const rowT = (l, v, big, color) => { x.fillStyle = color || (big ? DARK : GREY); x.font = (big ? '800 40px' : '500 28px') + ' Figtree, sans-serif'; x.fillText(l, 70, y); x.font = (big ? '700 42px' : '600 30px') + ' "JetBrains Mono", monospace'; x.textAlign = 'right'; x.fillText(v, W - 70, y); x.textAlign = 'left'; y += big ? 64 : 52; };
   if (t.desc) rowT('Descuentos', '-' + money(t.desc));
   rowT('Total', money(t.total), true);
+  const tzC = isV ? num(d.tasa) : cfg().tasa; if (tzC) rowT('En Bs (tasa ' + tasaFmt(tzC) + ')', bsFmt(t.total * tzC));
   rowT(isV ? 'Pagado' : 'Abonado', money(t.pagado));
   rowT(isV ? 'Saldo pendiente' : 'Resta por pagar', money(t.saldo), false, t.saldo > 0 ? '#C23A30' : '#23864A');
   if (!isV) { x.fillStyle = GREY; x.font = 'italic 500 24px Figtree, sans-serif'; x.fillText('Los productos quedan reservados a tu nombre.', 70, y); y += 50; }
@@ -1082,6 +1389,15 @@ document.addEventListener('click', async ev => {
     case 'invF': S.invFilter = b.dataset.f; render(); break;
     case 'year': S.year = +b.dataset.y; render(); break;
     case 'catCam': S.catEnCamino = b.dataset.v === '1'; render(); break;
+    case 'catBs': S.catBs = !S.catBs; render(); break;
+    case 'cajaP': S.cajaP = b.dataset.p; render(); break;
+    case 'statP': S.statP = b.dataset.p; render(); break;
+    case 'copyCierre': copyText(cierreTexto()); break;
+    case 'tasa': if (can()) tasaForm(); else toast('Sin conexión con la hoja.'); break;
+    case 'pick': pickAdd(b.dataset.c, b.dataset.m); break;
+    case 'askS': ask(b.dataset.q); break;
+    case 'askStop': if (S.asking) S.asking.abort(); break;
+    case 'askClear': S.chat = []; render(); break;
     case 'closeSheet': closeSheet(); break;
     case 'prod': prodDetail(b.dataset.c); break;
     case 'newProd': prodForm(null); break;
@@ -1146,10 +1462,12 @@ document.addEventListener('click', async ev => {
 document.addEventListener('input', ev => {
   const t = ev.target;
   if (t.dataset && t.dataset.in) { S[t.dataset.in] = t.value; const pos = t.selectionStart; render(); const n = document.getElementById(t.id); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} } return; }
-  if (t.closest && t.closest('#sheetCard form')) updateLines();
+  if (t.id === 'askQ') { S.askDraft = t.value; return; }
+  if (t.id === 'pk_q') { const q = t.value.trim().toLowerCase(); document.querySelectorAll('#pkGrid .pick').forEach(b => { b.hidden = !!q && !b.dataset.s.includes(q); }); return; }
+  if (t.closest && t.closest('#sheetCard form')) { updateLines(); pgBs(); }
 });
-document.addEventListener('change', ev => { if (ev.target.closest && ev.target.closest('#sheetCard form')) { if (ev.target.classList.contains('l-p')) { const pr = ev.target.closest('[data-line]').querySelector('.l-pr'); if (pr) pr.value = ''; } updateLines(); } });
-document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !$('#sheet').hidden) closeSheet(); });
+document.addEventListener('change', ev => { if (ev.target.id === 'cajaDia') { if (ev.target.value) { S.cajaP = 'dia'; S.cajaDia = ev.target.value; render(); } return; } if (ev.target.closest && ev.target.closest('#sheetCard form')) { if (ev.target.classList.contains('l-p')) { const pr = ev.target.closest('[data-line]').querySelector('.l-pr'); if (pr) pr.value = ''; } updateLines(); } });
+document.addEventListener('keydown', ev => { if (ev.target && ev.target.id === 'askQ' && ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); ask(ev.target.value); return; } if (ev.key === 'Escape' && !$('#sheet').hidden) closeSheet(); });
 
 async function setApEstado(a, estado, nota) {
   await verify('apartados', a.sigs);
@@ -1165,7 +1483,7 @@ async function doDelete(kind, id) {
     ok = await W(async () => { const sig = {}, m = {}; for (const r of rows) { sig[r.row] = r.sig; m[r.row] = BLANK[k](r.row); } await verify(k, sig); await writeRows(k, m); }, 'Eliminado de la hoja');
   } else if (kind === 'ventas' || kind === 'apartados') {
     const d = S[kind].find(x => x.id === id);
-    ok = d && await W(async () => { await verify(kind, d.sigs); const m = {}; for (const r of d.rows) m[r] = BLANK[kind](r); await writeRows(kind, m); }, 'Eliminado de la hoja');
+    ok = d && await W(async () => { await verify(kind, d.sigs); const m = {}; for (const r of d.rows) m[r] = BLANK[kind](r); await writeRows(kind, m); await unlogPagos(kind === 'ventas' ? 'VENTA' : 'APARTADO', d.numero); }, 'Eliminado de la hoja');
   } else {
     const d = S[kind].find(x => x.id === id);
     ok = d && await W(async () => { await verify(kind, { [d.row]: d.sig }); await writeRows(kind, { [d.row]: BLANK[kind](d.row) }); }, 'Eliminado de la hoja');
@@ -1188,7 +1506,7 @@ async function entregar(id) {
     await fresh('ventas');
     numero = nextVenta();
     const total = sumItems(a.items), pagado = a.abonoSum || 0;
-    const v = { fecha: today(), numero, cliente: a.cliente, metodo: '', tasa: '', notas: ('Entrega del apartado ' + a.numero + (pagado ? ', con abonos por ' + money(pagado) : '') + '. ' + (a.notas || '')).trim() };
+    const v = { fecha: today(), numero, cliente: a.cliente, metodo: '', tasa: cfg().tasa || '', vendedor: myName(), notas: ('Entrega del apartado ' + a.numero + (pagado ? ', con abonos por ' + money(pagado) : '') + '. ' + (a.notas || '')).trim() };
     const start = needRows('ventas', a.items.length);
     await writeRows('ventas', ventaRows(start, v, a.items, estadoPago(total, pagado), pagado));
     await setApEstado(a, 'ENTREGADO', 'Entregado como venta N° ' + numero + ' el ' + fdate(today()));
@@ -1228,6 +1546,7 @@ document.addEventListener('submit', async ev => {
   ev.preventDefault();
   const fd = Object.fromEntries(new FormData(f).entries()), err = m => { const e = f.querySelector('#formErr'); if (e) e.textContent = m; };
   const kind = f.dataset.form, id = f.dataset.id, btn = f.querySelector('button[type=submit]');
+  if (kind === 'ask') { ask(fd.q); return; }
   if (kind === 'setup') {
     const a = (fd.api || '').trim(), k = (fd.clave || '').trim().toUpperCase();
     if (!/^https:\/\/script\.google(usercontent)?\.com\//.test(a)) return err('El enlace debe empezar con https://script.google.com/');
@@ -1239,6 +1558,15 @@ document.addEventListener('submit', async ev => {
     return;
   }
   if (!can() && kind !== 'ajustes') return err('No hay conexión con la hoja.');
+  if (kind === 'tasa') {
+    const v = num(String(fd.tasa || '').replace(/\./g, '').replace(',', '.'));
+    if (!(v > 0)) return err('Escribe la tasa, por ejemplo 205,50.');
+    btn && (btn.disabled = true);
+    const ok = await W(() => writeRows('params', { 9: [null, v, 'Actualizada el ' + fdate(today()) + (myName() ? ' por ' + myName() : '')] }), 'Tasa guardada: ' + tasaFmt(v) + ' Bs/$');
+    btn && (btn.disabled = false);
+    if (ok) closeSheet();
+    return;
+  }
   btn && (btn.disabled = true);
   try {
     if (kind === 'prod') {
@@ -1285,9 +1613,10 @@ document.addEventListener('submit', async ev => {
           }
         } else { await fresh(k); start = needRows(k, items.length); }
         const numero = old ? old.numero : (isV ? nextVenta() : nextApartado());
-        const doc = { fecha: fd.fecha, numero, cliente: nombre, metodo: fd.metodo || '', tasa: isV && fd.tasa ? num(fd.tasa) : '', notas };
+        const doc = { fecha: fd.fecha, numero, cliente: nombre, metodo: fd.metodo || '', tasa: isV && fd.tasa ? num(fd.tasa) : '', notas, vendedor: old ? (old.vendedor || '') : myName() };
         if (isV) { const pagado = old ? vt(old).pagado : pagoIni; await writeRows('ventas', ventaRows(start, doc, items, estadoPago(total, pagado), pagado)); }
         else { doc.abono = old ? (old.abonoSum || 0) : pagoIni; doc.estado = 'APARTADO'; await writeRows('apartados', apRows(start, doc, items)); }
+        if (!old && pagoIni > 0) await logPago({ fecha: fd.fecha, tipo: isV ? 'VENTA' : 'APARTADO', numero, cliente: nombre, monto: pagoIni, metodo: fd.metodo || '', tasa: isBsM(fd.metodo) ? (num(fd.tasa) || cfg().tasa) : '', notas: isV ? 'Pago al registrar la venta' : 'Abono inicial del apartado' });
         await ensureCliente(nombre, (fd.telefono || '').trim());
       }, old ? 'Cambios guardados en la hoja' : (isV ? 'Venta registrada en la hoja' : 'Apartado registrado en la hoja'));
       if (ok) closeSheet();
@@ -1311,6 +1640,7 @@ document.addEventListener('submit', async ev => {
           for (const r of d.rows.slice(1)) { const a2 = new Array(12).fill(null); a2[11] = ''; mm[r] = a2; }
         }
         await writeRows(k, mm);
+        await logPago({ fecha: fd.fecha || today(), tipo: k === 'ventas' ? 'VENTA' : 'APARTADO', numero: d.numero, cliente: d.cliente, monto: m, metodo: fd.metodo || '', tasa: isBsM(fd.metodo) ? num(fd.tasa) : '', notas: k === 'ventas' ? 'Pago de venta' : 'Abono de apartado' });
       }, 'Pago registrado en la hoja');
       if (ok) closeSheet();
     }
@@ -1358,6 +1688,7 @@ document.addEventListener('submit', async ev => {
       const lines = s => String(s || '').split('\n').map(x => x.trim().toUpperCase()).filter(Boolean);
       const metodos = String(fd.metodos || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => { const [n, c] = l.split('='); return { n: n.trim().toUpperCase(), c: num(c) }; });
       const tipos = lines(fd.tipos), cats = lines(fd.categorias), provs = lines(fd.proveedores);
+      lsSet('sf_nombre', (fd.minombre || '').trim());
       const negocio = { nombre: fd.nombre.trim() || 'StratoFil3D', whatsapp: fd.whatsapp.trim(), instagram: fd.instagram.trim(), ciudad: fd.ciudad.trim() };
       if (Math.max(tipos.length, cats.length, provs.length, metodos.length) > 50) return err('Cada lista admite hasta 50 elementos.');
       const ok = await W(async () => {
