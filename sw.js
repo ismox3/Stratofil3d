@@ -1,5 +1,5 @@
 // StratoFil3D · funciona sin internet para abrir la app; los datos siempre vienen de tu hoja.
-const VERSION = 'sf3d-v2';
+const VERSION = 'sf3d-v3';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener('activate', e => {

@@ -1,14 +1,14 @@
 {
   "name": "StratoFil3D",
   "short_name": "StratoFil3D",
-  "description": "Inventario, ventas, apartados y cobros de StratoFil3D, conectados a tu Google Sheet.",
+  "description": "STRATO · Calidad capa a capa. Inventario, ventas, caja y cobros conectados a tu Google Sheet.",
   "lang": "es",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0F1210",
-  "theme_color": "#0F1210",
+  "background_color": "#051022",
+  "theme_color": "#051022",
   "icons": [
     {
       "src": "icon-192.png",
