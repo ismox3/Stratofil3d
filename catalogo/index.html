@@ -52,22 +52,48 @@ header.top.stuck{border-bottom-color:var(--line)}
 .btn svg{width:18px;height:18px;flex:none}
 
 /* portada */
-.hero{padding-top:28px;padding-bottom:8px}
-.eyebrow{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
-.hero h1{font-family:var(--f-display);font-weight:700;font-size:clamp(34px,8vw,64px);line-height:.98;letter-spacing:-.035em;margin:0;text-wrap:balance}
-.hero p.lead{color:var(--muted);font-size:16px;max-width:52ch;margin:14px 0 0;text-wrap:pretty}
-.stats{display:flex;flex-wrap:wrap;gap:8px 18px;margin:20px 0 0;font-size:14px}
-.stat{display:flex;align-items:center;gap:8px}
-.stat b{font-family:var(--f-display);font-size:20px;font-variant-numeric:tabular-nums}
+.hero{padding-top:22px;padding-bottom:6px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:var(--f-body);font-weight:500;font-size:13px;color:var(--muted);margin:0 0 14px;padding:6px 12px 6px 8px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+.eyebrow b{font:inherit;color:var(--fg)}
+.eyebrow .pulse{width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 0 rgba(0,223,96,.6);animation:p 2.4s infinite;flex:none}
+.eyebrow.stale .pulse{background:var(--way);animation:none}
+.hero h1{font-family:var(--f-display);font-weight:700;font-size:clamp(36px,9.4vw,72px);line-height:.95;letter-spacing:-.04em;margin:0;text-wrap:balance}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p.lead{color:var(--muted);font-size:16px;max-width:46ch;margin:14px 0 0;text-wrap:pretty}
+.hero-cta{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.btn.dark{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+.btn.dark:hover{filter:brightness(1.25)}
+.stats{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 0}
+.stat{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:13px;color:var(--muted)}
+.stat b{font-family:var(--f-display);font-size:15px;color:var(--fg);font-variant-numeric:tabular-nums}
 .dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--ok)}
 .dot.way{background:var(--way)}.dot.out{background:var(--out);opacity:.6}
-.fresh{color:var(--muted);font-size:12.5px;margin-top:10px;display:flex;align-items:center;gap:6px}
-.fresh .pulse{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 0 rgba(0,223,96,.6);animation:p 2.4s infinite}
-.fresh.stale .pulse{background:var(--way);animation:none}
 @keyframes p{70%{box-shadow:0 0 0 7px rgba(0,223,96,0)}100%{box-shadow:0 0 0 0 rgba(0,223,96,0)}}
-@media (prefers-reduced-motion:reduce){.fresh .pulse{animation:none}}
+/* tira de colores que se desliza sola */
+.strip{margin-top:26px;overflow:hidden;-webkit-mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.strip-track{display:flex;gap:12px;width:max-content;animation:slide 48s linear infinite;padding:4px 0 6px}
+.strip:hover .strip-track,.strip:focus-within .strip-track,.strip.paused .strip-track{animation-play-state:paused}
+@keyframes slide{to{transform:translateX(calc(-50% - 6px))}}
+.st-tile{position:relative;flex:none;width:132px;border:0;padding:0;background:none;cursor:pointer;text-align:left}
+.st-tile .tile{border-radius:16px;overflow:hidden}
+.st-tile .tile img{width:100%;height:100%;object-fit:cover}
+.st-tile .nmx{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.st-tile .tile.is-out img{opacity:.45;filter:grayscale(1)}
+@media (min-width:700px){.st-tile{width:168px}.strip-track{gap:16px}}
+@media (prefers-reduced-motion:reduce){.strip{overflow-x:auto;-webkit-mask:none;mask:none}.strip-track{animation:none}.eyebrow .pulse{animation:none}}
+/* datos de servicio */
+.perks{display:flex;flex-wrap:wrap;gap:8px 20px;margin:20px 0 4px;font-size:13px;color:var(--muted)}
+.perk{display:inline-flex;align-items:center;gap:7px}
+.perk svg{width:17px;height:17px;color:var(--accent);flex:none}
+@media (min-width:900px){
+  .hero-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:40px;align-items:end}
+  .hero-side{padding-bottom:6px}
+  .hero-side .stats{margin-top:0}
+  .hero-side .perks{margin-top:14px}
+}
 
 /* filtros */
+#colores{scroll-margin-top:60px}
 .filters{position:relative;z-index:15;background:var(--bg);padding:12px 0 10px;border-bottom:1px solid var(--line)}
 @media (min-width:700px){.filters{position:sticky;top:60px}}
 .chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding-inline:16px}
@@ -173,15 +199,31 @@ footer{border-top:1px solid var(--line);padding:30px 0 calc(30px + env(safe-area
   </div>
 </header>
 
-<div class="wrap hero">
-  <p class="eyebrow">Filamento original Bambu Lab · Maracaibo</p>
-  <h1>Elige tu color.<br>Imprime capa a capa.</h1>
-  <p class="lead">Todo lo que tenemos, al día: lo que puedes llevarte hoy, lo que viene en camino y lo que se agotó. Toca un color para pedirlo por WhatsApp.</p>
-  <div class="stats" id="stats" aria-live="polite"></div>
-  <div class="fresh" id="fresh"><span class="pulse"></span><span id="freshT">Cargando inventario…</span></div>
-</div>
+<section class="wrap hero" aria-label="Portada">
+  <div class="hero-grid">
+    <div>
+      <p class="eyebrow" id="fresh"><span class="pulse"></span><span id="freshT">Cargando inventario…</span></p>
+      <h1>Filamento Bambu Lab <em>original</em>, en Maracaibo.</h1>
+      <p class="lead">Mira qué colores hay hoy, cuáles vienen en camino y pídelos por WhatsApp.</p>
+      <div class="hero-cta">
+        <a class="btn dark" href="#colores" id="goList">Ver colores</a>
+        <a class="btn" id="waHero" target="_blank" rel="noopener">Pedir por WhatsApp</a>
+      </div>
+    </div>
+    <div class="hero-side">
+      <div class="stats" id="stats" aria-live="polite"></div>
+      <div class="perks">
+        <span class="perk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>Entregas en Maracaibo</span>
+        <span class="perk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/></svg>Envíos nacionales</span>
+        <span class="perk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>9 am a 6 pm</span>
+        <span class="perk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>Pagas en Bs a tasa del día</span>
+      </div>
+    </div>
+  </div>
+  <div class="strip" id="strip" aria-label="Colores"><div class="strip-track" id="stripTrack"></div></div>
+</section>
 
-<div class="filters">
+<div class="filters" id="colores">
   <div class="wrap">
     <div class="chips" id="mats" role="group" aria-label="Material"></div>
     <div class="row2">
@@ -363,7 +405,8 @@ function filtered(){
 function renderStats(){
   const c = { ok:0, way:0, out:0 };
   for (const p of PRODUCTS) for (const v of p.vars) c[v.st]++;
-  $('#stats').innerHTML = `<span class="stat"><span class="dot"></span><b>${c.ok}</b> disponibles</span><span class="stat"><span class="dot way"></span><b>${c.way}</b> en camino</span><span class="stat"><span class="dot out"></span><b>${c.out}</b> agotados</span>`;
+  const colors = { ok: PRODUCTS.filter(p => p.st === 'ok').length, way: PRODUCTS.filter(p => p.st === 'way').length, out: PRODUCTS.filter(p => p.st === 'out').length };
+  $('#stats').innerHTML = `<span class="stat"><span class="dot"></span><b>${colors.ok}</b> colores disponibles</span>${colors.way ? `<span class="stat"><span class="dot way"></span><b>${colors.way}</b> en camino</span>` : ''}${colors.out ? `<span class="stat"><span class="dot out"></span><b>${colors.out}</b> agotados</span>` : ''}`;
 }
 function renderFilters(){
   const cnt = m => PRODUCTS.filter(p => m === 'ALL' || p.mat === m).length;
@@ -399,9 +442,14 @@ function renderFresh(){
   if (!lastOk) { $('#freshT').textContent = 'Cargando inventario…'; return; }
   const d = new Date(lastOk);
   const when = d.toLocaleString('es-VE', { day:'numeric', month:'short', hour:'numeric', minute:'2-digit' });
-  $('#freshT').textContent = usingSnapshot ? `Inventario del ${when}` : `Inventario en vivo · actualizado ${when}`;
+  $('#freshT').innerHTML = usingSnapshot ? `Inventario del <b>${when}</b>` : `Inventario en vivo · <b>${when}</b>`;
 }
-function render(){ renderStats(); renderFilters(); renderList(); renderFresh(); }
+function renderStrip(){
+  const one = PRODUCTS.map(p => `<button class="st-tile" data-key="${esc(p.key)}" aria-label="${esc(matName(p.mat) + ' ' + colorName(p) + ', ' + ST[p.st].label)}"><div class="tile${p.st === 'out' ? ' is-out' : ''}">${p.photo ? `<img src="${p.photo.replace('img/', 'img/t/')}" alt="" width="400" height="400">` : tileHTML(p)}</div><span class="nmx"><span class="dot ${p.st}"></span>${esc(colorName(p))}</span></button>`).join('');
+  // la lista va dos veces para que el deslizamiento no tenga saltos; la copia se oculta a lectores de pantalla
+  $('#stripTrack').innerHTML = one + `<div style="display:contents" aria-hidden="true">${one.replace(/<button /g, '<button tabindex="-1" ')}</div>`;
+}
+function render(){ renderStats(); renderStrip(); renderFilters(); renderList(); renderFresh(); }
 
 /* ===== Ficha ===== */
 let cur = null, curVar = 0;
@@ -447,7 +495,7 @@ $('#dlg').addEventListener('click', e => {
 
 /* ===== Eventos ===== */
 document.addEventListener('click', e => {
-  const c = e.target.closest('.card'); if (c) return openProduct(c.dataset.key);
+  const c = e.target.closest('.card,.st-tile'); if (c) return openProduct(c.dataset.key);
   const m = e.target.closest('[data-mat]'); if (m){ UI.mat = m.dataset.mat; lsSet('cat.mat', UI.mat); renderFilters(); renderList(); return; }
   const s = e.target.closest('[data-st]'); if (s){ UI.st = s.dataset.st; lsSet('cat.st', UI.st); renderFilters(); renderList(); return; }
   if (e.target.closest('[data-reset]')){ UI.mat = 'ALL'; UI.st = 'ALL'; UI.q = ''; $('#q').value = ''; renderFilters(); renderList(); }
@@ -456,7 +504,9 @@ $('#q').addEventListener('input', e => { UI.q = e.target.value; renderList(); })
 const hdr = $('#top');
 addEventListener('scroll', () => hdr.classList.toggle('stuck', scrollY > 8), { passive:true });
 const general = waLink('Hola STRATO, vi el catálogo y quiero hacer un pedido.');
-$('#waTop').href = general; $('#waFab').href = general;
+$('#waTop').href = general; $('#waFab').href = general; $('#waHero').href = general;
+$('#strip').addEventListener('touchstart', () => $('#strip').classList.add('paused'), { passive:true });
+$('#strip').addEventListener('touchend', () => setTimeout(() => $('#strip').classList.remove('paused'), 2500), { passive:true });
 
 /* ===== Datos: hoja publicada en vivo, o copia guardada ===== */
 async function load(){
