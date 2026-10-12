@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Catálogo STRATO · Filamento Bambu Lab en Maracaibo</title>
+<meta name="description" content="Colores de filamento Bambu Lab original disponibles, en camino y agotados. Entregas en Maracaibo y envíos nacionales.">
+<meta name="theme-color" content="#051022">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Catálogo STRATO · Filamento Bambu Lab">
+<meta property="og:description" content="Mira qué colores hay disponibles hoy y pide por WhatsApp. Entregas en Maracaibo y envíos nacionales.">
+<meta property="og:image" content="https://ismox3.github.io/Stratofil3d/catalogo/og.png">
+<meta property="og:url" content="https://ismox3.github.io/Stratofil3d/catalogo/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Catálogo público de STRATO. Tienda limpia tipo fabricante: fichas grises con la foto, filtros por material,
+   ficha de producto con selector de color. Marca STRATO: noche, verde, hueso; naranja solo para "en camino". */
+:root{
+  --bg:#F1F6F0; --surface:#FFFFFF; --surface-2:#E6ECE6; --line:#D5DCD4; --tile:#F1F1F1;
+  --fg:#051022; --muted:#4F5967; --accent:#00803A; --lime:#00DF60; --ink:#051022;
+  --ok:#00803A; --ok-bg:#D9F5E3; --way:#B83D00; --way-bg:#FFE3D3; --out:#5B6573; --out-bg:#E3E7EC;
+  --shadow:0 18px 50px rgba(5,16,34,.18);
+  --f-display:"Space Grotesk","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Plus Jakarta Sans","Helvetica Neue",Arial,sans-serif;
+  --r:14px; color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#051022; --surface:#0D1B33; --surface-2:#142441; --line:#1E2B42;
+  --fg:#F1F6F0; --muted:#A6B0BC; --accent:#00DF60;
+  --ok:#00DF60; --ok-bg:#06301F; --way:#FF7A33; --way-bg:#3A1A0A; --out:#A6B0BC; --out-bg:#1B2840;
+  --shadow:0 18px 50px rgba(0,0,0,.55); color-scheme:dark;}
+  :root:not([data-theme="light"]) .lg-d{display:none}:root:not([data-theme="light"]) .lg-l{display:block}}
+:root[data-theme="dark"]{
+  --bg:#051022; --surface:#0D1B33; --surface-2:#142441; --line:#1E2B42;
+  --fg:#F1F6F0; --muted:#A6B0BC; --accent:#00DF60;
+  --ok:#00DF60; --ok-bg:#06301F; --way:#FF7A33; --way-bg:#3A1A0A; --out:#A6B0BC; --out-bg:#1B2840;
+  --shadow:0 18px 50px rgba(0,0,0,.55); color-scheme:dark;}
+:root[data-theme="dark"] .lg-d{display:none}:root[data-theme="dark"] .lg-l{display:block}
+.lg-l{display:none}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+button,input{font:inherit;color:inherit}
+a{color:inherit}
+[hidden]{display:none!important}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+/* cabecera */
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid transparent;transition:border-color .2s}
+header.top.stuck{border-bottom-color:var(--line)}
+.bar{display:flex;align-items:center;gap:12px;height:60px}
+.brand{line-height:0}.brand img{height:34px;width:auto}
+.bar .sp{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:14px;text-decoration:none;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--lime);border-color:var(--lime);color:var(--ink)}
+.btn.pri:hover{filter:brightness(.95)}
+.btn svg{width:18px;height:18px;flex:none}
+
+/* portada */
+.hero{padding-top:28px;padding-bottom:8px}
+.eyebrow{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
+.hero h1{font-family:var(--f-display);font-weight:700;font-size:clamp(34px,8vw,64px);line-height:.98;letter-spacing:-.035em;margin:0;text-wrap:balance}
+.hero p.lead{color:var(--muted);font-size:16px;max-width:52ch;margin:14px 0 0;text-wrap:pretty}
+.stats{display:flex;flex-wrap:wrap;gap:8px 18px;margin:20px 0 0;font-size:14px}
+.stat{display:flex;align-items:center;gap:8px}
+.stat b{font-family:var(--f-display);font-size:20px;font-variant-numeric:tabular-nums}
+.dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--ok)}
+.dot.way{background:var(--way)}.dot.out{background:var(--out);opacity:.6}
+.fresh{color:var(--muted);font-size:12.5px;margin-top:10px;display:flex;align-items:center;gap:6px}
+.fresh .pulse{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 0 rgba(0,223,96,.6);animation:p 2.4s infinite}
+.fresh.stale .pulse{background:var(--way);animation:none}
+@keyframes p{70%{box-shadow:0 0 0 7px rgba(0,223,96,0)}100%{box-shadow:0 0 0 0 rgba(0,223,96,0)}}
+@media (prefers-reduced-motion:reduce){.fresh .pulse{animation:none}}
+
+/* filtros */
+.filters{position:relative;z-index:15;background:var(--bg);padding:12px 0 10px;border-bottom:1px solid var(--line)}
+@media (min-width:700px){.filters{position:sticky;top:60px}}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding-inline:16px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;min-height:38px;padding:0 15px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:13.5px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chip .n{font-family:var(--f-display);font-weight:500;opacity:.6;font-variant-numeric:tabular-nums}
+.row2{display:flex;gap:8px;margin-top:10px;align-items:center}
+.seg{display:flex;background:var(--surface-2);border-radius:999px;padding:3px;gap:2px;flex:none}
+.seg button{border:0;background:none;min-height:34px;padding:0 12px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(5,16,34,.12)}
+.search{flex:1;min-width:0;position:relative}
+.search input{width:100%;min-height:40px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:0 14px 0 38px;font-size:16px}
+.search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--muted)}
+@media (max-width:560px){.row2{flex-wrap:wrap}.seg{order:2;width:100%}.seg button{flex:1;justify-content:center;padding:0 6px}.search{order:1;flex-basis:100%}}
+
+/* secciones y fichas */
+main{padding-bottom:40px}
+section.mat{padding-top:30px}
+.mat-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.mat-h h2{font-family:var(--f-display);font-weight:700;font-size:26px;letter-spacing:-.025em;margin:0}
+.mat-h .n{color:var(--muted);font-size:13px;font-family:var(--f-display)}
+.mat-d{color:var(--muted);margin:0 0 16px;font-size:14px;max-width:60ch}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (min-width:700px){.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}}
+@media (min-width:1000px){.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;cursor:pointer;text-align:left;padding:0;display:flex;flex-direction:column;transition:transform .18s,box-shadow .18s}
+.card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.tile{position:relative;aspect-ratio:1;background:var(--tile)}
+.tile img,.tile svg.vase{width:100%;height:100%;object-fit:cover}
+.card.is-out .tile>img,.card.is-out .tile svg.vase,.card.is-out .tile .vz{opacity:.5;filter:grayscale(.5)}
+.vz{position:absolute;inset:0;isolation:isolate}
+.vz .vf,.vz .vs{position:absolute;inset:0;-webkit-mask:url(vase-mask.png) center/100% 100% no-repeat;mask:url(vase-mask.png) center/100% 100% no-repeat}
+.vz .vf{background:var(--c)}
+.vz .vsh{position:absolute;inset:0;width:100%;height:100%;mix-blend-mode:multiply}
+.vz .vs{background:linear-gradient(118deg,transparent 22%,rgba(255,255,255,.6) 40%,transparent 54%,transparent 66%,rgba(255,255,255,.35) 78%,transparent 90%);mix-blend-mode:screen}
+.badge{position:absolute;left:10px;bottom:10px;display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;letter-spacing:.02em;padding:5px 9px;border-radius:999px;background:#fff;color:#051022;box-shadow:0 1px 4px rgba(5,16,34,.12)}
+.badge .dot{background:#00803A}.badge.way .dot{background:#E25200}.badge.out{color:#5B6573}.badge.out .dot{background:#8A939F;opacity:1}
+.body{padding:12px 12px 14px;display:flex;flex-direction:column;gap:8px;flex:1}
+.nm{display:flex;align-items:flex-start;gap:8px}
+.sw{width:16px;height:16px;border-radius:50%;flex:none;margin-top:3px;box-shadow:inset 0 0 0 1px rgba(5,16,34,.18)}
+.nm b{display:block;font-family:var(--f-display);font-weight:600;font-size:15.5px;line-height:1.2;letter-spacing:-.01em}
+.nm small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.vars{display:flex;flex-direction:column;gap:5px;margin-top:auto}
+.var{display:flex;align-items:center;gap:7px;font-size:12.5px}
+.var .lbl{color:var(--muted);flex:1;min-width:0}
+.var .pr{font-family:var(--f-display);font-weight:600;font-variant-numeric:tabular-nums;font-size:14px}
+.var.out .lbl,.var.out .pr{opacity:.55}.var.out .pr{text-decoration:line-through}
+.empty{padding:50px 0;text-align:center;color:var(--muted)}
+
+/* ficha de producto */
+dialog{border:0;padding:0;max-width:980px;width:calc(100% - 32px);border-radius:20px;background:var(--surface);color:var(--fg);box-shadow:var(--shadow);max-height:calc(100dvh - 32px)}
+dialog::backdrop{background:rgba(5,16,34,.55)}
+.dlg{display:grid;grid-template-columns:1fr;max-height:calc(100dvh - 32px);overflow:auto}
+@media (min-width:800px){.dlg{grid-template-columns:1.05fr 1fr}}
+.dlg .tile{border-radius:0}
+.x{position:absolute;right:12px;top:12px;z-index:2;width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.92);color:#051022;cursor:pointer;display:grid;place-items:center;box-shadow:0 1px 6px rgba(5,16,34,.18)}
+.x svg{width:18px;height:18px}
+.info{padding:22px 20px 24px;display:flex;flex-direction:column;gap:18px}
+.info .mt{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0}
+.info h3{font-family:var(--f-display);font-weight:700;font-size:30px;letter-spacing:-.03em;line-height:1.05;margin:4px 0 0}
+.info .es{color:var(--muted);margin:4px 0 0}
+.lab{font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.lab span{text-transform:none;letter-spacing:0;color:var(--fg);font-weight:600}
+.swatches{display:flex;flex-wrap:wrap;gap:10px}
+.swb{position:relative;width:40px;height:40px;border-radius:50%;border:0;padding:0;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(5,16,34,.2)}
+.swb[aria-pressed="true"]{outline:2px solid var(--fg);outline-offset:3px}
+.swb i{position:absolute;right:-2px;bottom:-2px;width:12px;height:12px;border-radius:50%;border:2px solid var(--surface);background:#00803A}
+.swb i.way{background:#E25200}.swb i.out{background:#8A939F}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;align-items:center;gap:12px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;background:var(--surface);text-align:left;width:100%}
+.opt[aria-pressed="true"]{border-color:var(--fg);box-shadow:inset 0 0 0 1px var(--fg)}
+.opt .t{flex:1;min-width:0}
+.opt .t b{display:block;font-weight:700;font-size:14.5px}
+.opt .t small{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px;margin-top:2px}
+.opt .pr{font-family:var(--f-display);font-weight:700;font-size:20px;font-variant-numeric:tabular-nums}
+.note{font-size:13px;color:var(--muted);margin:0;text-wrap:pretty}
+.cta .btn{width:100%;min-height:52px;font-size:15.5px}
+.cta p{text-align:center;font-size:12.5px;color:var(--muted);margin:10px 0 0}
+
+/* pie */
+footer{border-top:1px solid var(--line);padding:30px 0 calc(30px + env(safe-area-inset-bottom,0px));color:var(--muted);font-size:13.5px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:22px}
+.fact b{display:block;color:var(--fg);font-family:var(--f-display);font-weight:600;font-size:15px;margin-bottom:2px}
+.fine{font-size:12px;margin:0}
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;box-shadow:0 8px 24px rgba(5,16,34,.25)}
+@media (min-width:700px){.fab{display:none}}
+.sk{background:linear-gradient(90deg,var(--surface-2),var(--surface),var(--surface-2));background-size:200% 100%;animation:sk 1.4s infinite;border-radius:var(--r);aspect-ratio:.72}
+@keyframes sk{to{background-position:-200% 0}}
+</style>
+</head>
+<body>
+<header class="top" id="top">
+  <div class="wrap bar">
+    <a class="brand" href="#" aria-label="STRATO, inicio"><img class="lg-d" src="logo-dark.png" alt="STRATO" width="353" height="239"><img class="lg-l" src="logo-light.png" alt="STRATO" width="353" height="239"></a>
+    <div class="sp"></div>
+    <a class="btn pri" id="waTop" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3Z"/></svg><span>Escríbenos</span></a>
+  </div>
+</header>
+
+<div class="wrap hero">
+  <p class="eyebrow">Filamento original Bambu Lab · Maracaibo</p>
+  <h1>Elige tu color.<br>Imprime capa a capa.</h1>
+  <p class="lead">Todo lo que tenemos, al día: lo que puedes llevarte hoy, lo que viene en camino y lo que se agotó. Toca un color para pedirlo por WhatsApp.</p>
+  <div class="stats" id="stats" aria-live="polite"></div>
+  <div class="fresh" id="fresh"><span class="pulse"></span><span id="freshT">Cargando inventario…</span></div>
+</div>
+
+<div class="filters">
+  <div class="wrap">
+    <div class="chips" id="mats" role="group" aria-label="Material"></div>
+    <div class="row2">
+      <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Buscar color: negro, azul, gold…" aria-label="Buscar color" autocomplete="off"></label>
+      <div class="seg" id="sts" role="group" aria-label="Disponibilidad"></div>
+    </div>
+  </div>
+</div>
+
+<main class="wrap" id="list" aria-live="polite">
+  <div class="grid" style="padding-top:30px"><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="facts">
+      <div class="fact"><b>Entregas en Maracaibo</b>Y envíos a todo el país.</div>
+      <div class="fact"><b>De 9 am a 6 pm</b>Te respondemos por WhatsApp.</div>
+      <div class="fact"><b>Precios en dólares</b>Puedes pagar en bolívares a la tasa del día.</div>
+      <div class="fact"><b>Refill o con spool</b>El refill es el rollo sin carrete; úsalo con un carrete reutilizable.</div>
+    </div>
+    <p class="fine">STRATO (StratoFil3D) es un revendedor independiente de productos Bambu Lab originales. Bambu Lab es una marca de su respectivo dueño. Los colores en pantalla son referenciales.</p>
+  </div>
+</footer>
+
+<a class="btn pri fab" id="waFab" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3Z"/></svg>WhatsApp</a>
+
+<dialog id="dlg" aria-label="Detalle del producto"></dialog>
+
+<script>
+/* ===== Configuración =====
+   SHEET_CSV: enlace "Publicar en la web" (CSV) de la pestaña "Catálogo Tabla" de tu Google Sheet.
+   Mientras esté vacío, la página usa data.json (la última copia guardada). */
+const CONFIG = {
+  SHEET_CSV: '',
+  WHATSAPP: '584226660410',
+  REFRESH_MIN: 5
+};
+
+/* ===== Datos de referencia ===== */
+const MATS = {
+  'PLA BASIC':  { name:'PLA Basic',  d:'El PLA de todos los días: fácil de imprimir, buen acabado y la paleta más amplia.' },
+  'PLA MATTE':  { name:'PLA Matte',  d:'Acabado mate, sin brillo, que disimula las capas. Ideal para piezas decorativas.' },
+  'PLA SILK+':  { name:'PLA Silk+',  d:'Brillo sedoso tipo metálico. Para figuras, regalos y piezas que se lucen.', silk:true },
+  'PLA PURE':   { name:'PLA Pure',   d:'PLA con certificación de bajas emisiones, en tonos suaves.' },
+  'PETG BASIC': { name:'PETG Basic', d:'Más resistente al calor y a los golpes que el PLA. Para piezas funcionales.' },
+  'ABS':        { name:'ABS',        d:'Para piezas técnicas que necesitan aguantar temperatura y esfuerzo.' },
+  'ACCESORIO':  { name:'Accesorios', d:'Repuestos y complementos originales para tu impresora.' }
+};
+const MAT_ORDER = Object.keys(MATS);
+/* Colores de referencia (aproximados) para dibujar la muestra cuando no hay foto */
+const HEX = {
+  'PLA BASIC|JADE WHITE':'#F4F4F1','PLA BASIC|BLACK':'#1C1C1E','PLA BASIC|PUMPKIN ORANGE':'#FF8A16','PLA BASIC|BAMBU GREEN':'#00AE42',
+  'PLA BASIC|RED':'#D72A20','PLA BASIC|PURPLE':'#6A4FC2','PLA BASIC|SUNFLOWER YELLOW':'#FEC600','PLA BASIC|BLUE':'#1E44B2',
+  'PLA BASIC|CYAN':'#0086D6','PLA BASIC|LIGHT GRAY':'#C9CBCD','PLA BASIC|DARK GRAY':'#55585C','PLA BASIC|INDIGO PURPLE':'#482960',
+  'PLA BASIC|SILVER':'#A6A9AA','PLA BASIC|BRIGHT GREEN':'#BECF00','PLA BASIC|MAGENTA':'#EC008C','PLA BASIC|MAROON RED':'#9D2235',
+  'PLA BASIC|MISTLETOE GREEN':'#3F8E43','PLA BASIC|ORANGE':'#FF6A13','PLA BASIC|BROWN':'#9D432C','PLA BASIC|COCOA BROWN':'#6F5034',
+  'PLA BASIC|GOLD':'#E4BD68','PLA BASIC|PINK':'#F55A74','PLA BASIC|BEIGE':'#F7E6DE','PLA BASIC|GRAY':'#8E9089',
+  'PLA PURE|MILKY PINK':'#F4C3C8',
+  'PLA MATTE|ICE BLUE':'#A3D8E1','PLA MATTE|DESERT TAN':'#E8DBB7','PLA MATTE|DARK BLUE':'#042F56','PLA MATTE|CHARCOAL':'#3B3B3B',
+  'PLA MATTE|IVORY WHITE':'#FFFFFF','PLA MATTE|SAKURA PINK':'#E8AFCF','PLA MATTE|LILAC PURPLE':'#AE96D4','PLA MATTE|MANDARIN ORANGE':'#F99963',
+  'PLA SILK+|PURPLE':'#8F6BD8','PLA SILK+|CANDY GREEN':'#3FB98B','PLA SILK+|CANDY RED':'#D3262E','PLA SILK+|GOLD':'#E0B04A','PLA SILK+|BLUE':'#1C7BD6',
+  'PLA SILK+|SILVER':'#C8CACC','PLA SILK+|WHITE':'#F2F2F2',
+  'PETG BASIC|BLACK':'#1C1C1E','PETG BASIC|WHITE':'#F2F2F2','ABS|BLACK':'#1C1C1E','ABS|WHITE':'#F2F2F2'
+};
+const ES = {
+  'JADE WHITE':'Blanco','BLACK':'Negro','PUMPKIN ORANGE':'Naranja calabaza','BAMBU GREEN':'Verde Bambu','RED':'Rojo','PURPLE':'Morado',
+  'SUNFLOWER YELLOW':'Amarillo girasol','BLUE':'Azul','CYAN':'Celeste','LIGHT GRAY':'Gris claro','DARK GRAY':'Gris oscuro',
+  'INDIGO PURPLE':'Morado índigo','SILVER':'Plateado','BRIGHT GREEN':'Verde lima','MAGENTA':'Magenta','MAROON RED':'Vinotinto',
+  'MISTLETOE GREEN':'Verde muérdago','ORANGE':'Naranja','BROWN':'Marrón','COCOA BROWN':'Marrón cacao','MILKY PINK':'Rosado pastel',
+  'ICE BLUE':'Azul hielo','DESERT TAN':'Arena','DARK BLUE':'Azul marino','CANDY GREEN':'Verde caramelo','CANDY RED':'Rojo caramelo',
+  'GOLD':'Dorado','WHITE':'Blanco','PINK':'Rosado','BEIGE':'Beige','GRAY':'Gris','CHARCOAL':'Carbón','IVORY WHITE':'Blanco marfil',
+  'SAKURA PINK':'Rosado sakura','LILAC PURPLE':'Lila','MANDARIN ORANGE':'Mandarina',
+  '3D EFFECT PLATE (CARBON FIBER)':'Placa de impresión con textura','HOTEND A1/A2 0.4 MM ACERO ENDURECIDO':'Para impresoras serie A',
+  'GLUE STICK (BARRA)':'Mejora la adherencia a la cama'
+};
+/* Fotos reales disponibles (carpeta img/) */
+const PHOTOS = new Set(['pla-basic-sunflower-yellow','pla-basic-red','pla-basic-bambu-green','pla-basic-blue','pla-basic-black','pla-basic-purple',
+  'pla-basic-dark-gray','pla-basic-light-gray','pla-basic-pumpkin-orange','pla-basic-jade-white','pla-pure-milky-pink','pla-basic-cyan']);
+const ST = {
+  ok:  { k:'ok',  label:'Disponible', short:'Disponible' },
+  way: { k:'way', label:'En camino',  short:'En camino' },
+  out: { k:'out', label:'Agotado',    short:'Agotado' }
+};
+const RANK = { ok:0, way:1, out:2 };
+
+/* ===== Utilidades ===== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const slug = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\+/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const title = s => String(s).toLowerCase().replace(/(^|[\s(/-])([a-z])/g,(m,a,b)=>a+b.toUpperCase()).replace(/\bMm\b/,'mm').replace(/\bA1\/a2\b/i,'A1/A2');
+const money = n => '$' + (Math.round(n*100)/100).toString();
+function statusOf(s){
+  const t = String(s||'').trim().toLowerCase();
+  if (t.startsWith('dispon')) return 'ok';
+  if (t.includes('llegar') || t.includes('camino')) return 'way';
+  return 'out';
+}
+function parseCSV(txt){
+  const rows=[]; let row=[], f='', q=false;
+  for (let i=0;i<txt.length;i++){
+    const c=txt[i];
+    if (q){ if (c==='"'){ if (txt[i+1]==='"'){ f+='"'; i++; } else q=false; } else f+=c; }
+    else if (c==='"') q=true;
+    else if (c===','){ row.push(f); f=''; }
+    else if (c==='\n'){ row.push(f); rows.push(row); row=[]; f=''; }
+    else if (c!=='\r') f+=c;
+  }
+  if (f!=='' || row.length){ row.push(f); rows.push(row); }
+  return rows;
+}
+function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+/* ===== Vaso en espiral (para colores sin foto): silueta y sombreado de una foto real, teñidos con el color ===== */
+function shade(hex, amt){
+  const n=parseInt(hex.slice(1),16); let r=n>>16, g=n>>8&255, b=n&255;
+  const f=v=>Math.max(0,Math.min(255,Math.round(amt<0? v*(1+amt) : v+(255-v)*amt)));
+  return '#'+[f(r),f(g),f(b)].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+function lum(hex){ const n=parseInt(hex.slice(1),16); return (0.2126*(n>>16)+0.7152*(n>>8&255)+0.0722*(n&255))/255; }
+function vaseHTML(hex, silk){
+  const fill = lum(hex) < 0.16 ? shade(hex, .22) : hex; // los colores muy oscuros se aclaran un poco para que se vea el relieve
+  return `<div class="vz" style="--c:${fill}"><i class="vf"></i><img class="vsh" src="vase-shade.png" alt="" aria-hidden="true">${silk ? '<i class="vs"></i>' : ''}</div>`;
+}
+function accSVG(name){
+  const n=name.toLowerCase();
+  let g;
+  if (n.includes('plate')) g='<rect x="92" y="150" width="216" height="128" rx="10" transform="skewX(-12) translate(32 0)" fill="#2B2F36"/><rect x="92" y="150" width="216" height="128" rx="10" transform="skewX(-12) translate(32 0)" fill="url(#cf)" opacity=".5"/>';
+  else if (n.includes('hotend')) g='<rect x="170" y="110" width="60" height="70" rx="6" fill="#9AA3AD"/><rect x="160" y="180" width="80" height="60" rx="8" fill="#3A3F47"/><path d="M190 240h20l-4 40h-12z" fill="#C9A86A"/><rect x="186" y="96" width="28" height="16" rx="3" fill="#7A838D"/>';
+  else g='<rect x="172" y="120" width="56" height="150" rx="10" fill="#E9ECEF" stroke="#BFC5CC"/><rect x="172" y="120" width="56" height="44" rx="10" fill="#00AE42"/><rect x="180" y="270" width="40" height="20" rx="5" fill="#00AE42"/>';
+  return `<svg class="vase" viewBox="0 0 400 400" aria-hidden="true"><defs><pattern id="cf" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M0 0h5v5H0zM5 5h5v5H5z" fill="#000"/></pattern><radialGradient id="ash"><stop offset="0" stop-color="#051022" stop-opacity=".2"/><stop offset="1" stop-color="#051022" stop-opacity="0"/></radialGradient></defs><rect width="400" height="400" fill="#F1F1F1"/><ellipse cx="200" cy="296" rx="120" ry="12" fill="url(#ash)"/>${g}</svg>`;
+}
+
+/* ===== Estado ===== */
+let PRODUCTS = [];
+const UI = { mat: lsGet('cat.mat') || 'ALL', st: lsGet('cat.st') || 'ALL', q: '' };
+let lastOk = null, usingSnapshot = false;
+
+function build(rows){
+  const map = new Map();
+  for (const r of rows){
+    const [mat, pres, color, price, est] = r.map(x => String(x ?? '').trim());
+    if (!mat || !color || /^material$/i.test(mat)) continue;
+    const M = mat.toUpperCase(), C = color.toUpperCase();
+    const key = M + '|' + C;
+    if (!map.has(key)) map.set(key, { key, mat:M, color:C, slug: slug(M + ' ' + C), vars: [] });
+    map.get(key).vars.push({ pres: pres.toUpperCase(), price: parseFloat(String(price).replace(/[^0-9.,]/g,'').replace(',','.')) || 0, st: statusOf(est) });
+  }
+  const list = [...map.values()];
+  for (const p of list){
+    p.vars.sort((a,b) => (a.pres === 'CON SPOOL' ? 0 : 1) - (b.pres === 'CON SPOOL' ? 0 : 1));
+    p.st = p.vars.reduce((m,v) => RANK[v.st] < RANK[m] ? v.st : m, 'out');
+    p.hex = HEX[p.key] || '#B8BEC6';
+    p.photo = PHOTOS.has(p.slug) ? 'img/' + p.slug + '.webp' : null;
+    p.es = ES[p.color] || '';
+  }
+  list.sort((a,b) => (MAT_ORDER.indexOf(a.mat) + 99 * (MAT_ORDER.indexOf(a.mat) < 0)) - (MAT_ORDER.indexOf(b.mat) + 99 * (MAT_ORDER.indexOf(b.mat) < 0)) || RANK[a.st] - RANK[b.st] || a.color.localeCompare(b.color));
+  return list;
+}
+const presLabel = p => p === 'CON SPOOL' ? 'Con spool' : p === 'REFILL' ? 'Refill' : p === 'UNIDAD' ? 'Unidad' : title(p);
+const matName = m => (MATS[m] && MATS[m].name) || title(m);
+const colorName = p => p.mat === 'ACCESORIO' ? title(p.color.replace(/\s*\(.*\)$/,'')) : title(p.color);
+function tileHTML(p){
+  if (p.photo) return `<img src="${p.photo}" alt="${esc(matName(p.mat) + ' ' + colorName(p))}" loading="lazy" width="800" height="800">`;
+  return p.mat === 'ACCESORIO' ? accSVG(p.color) : vaseHTML(p.hex, !!(MATS[p.mat] && MATS[p.mat].silk));
+}
+const badge = st => `<span class="badge ${st}"><span class="dot ${st}"></span>${ST[st].label}</span>`;
+
+/* ===== Render ===== */
+function filtered(){
+  const q = slug(UI.q);
+  return PRODUCTS.filter(p =>
+    (UI.mat === 'ALL' || p.mat === UI.mat) &&
+    (UI.st === 'ALL' || p.st === UI.st) &&
+    (!q || slug(p.color + ' ' + p.es + ' ' + matName(p.mat)).includes(q)));
+}
+function renderStats(){
+  const c = { ok:0, way:0, out:0 };
+  for (const p of PRODUCTS) for (const v of p.vars) c[v.st]++;
+  $('#stats').innerHTML = `<span class="stat"><span class="dot"></span><b>${c.ok}</b> disponibles</span><span class="stat"><span class="dot way"></span><b>${c.way}</b> en camino</span><span class="stat"><span class="dot out"></span><b>${c.out}</b> agotados</span>`;
+}
+function renderFilters(){
+  const cnt = m => PRODUCTS.filter(p => m === 'ALL' || p.mat === m).length;
+  const mats = ['ALL', ...MAT_ORDER.filter(m => PRODUCTS.some(p => p.mat === m)), ...[...new Set(PRODUCTS.map(p => p.mat))].filter(m => !MAT_ORDER.includes(m))];
+  if (!mats.includes(UI.mat)) UI.mat = 'ALL';
+  $('#mats').innerHTML = mats.map(m => `<button class="chip" data-mat="${esc(m)}" aria-pressed="${UI.mat === m}">${m === 'ALL' ? 'Todos' : esc(matName(m))}<span class="n">${cnt(m)}</span></button>`).join('');
+  $('#sts').innerHTML = [['ALL','Todo'],['ok','Disponible'],['way','En camino']].map(([k,l]) => `<button data-st="${k}" aria-pressed="${UI.st === k}">${k !== 'ALL' ? `<span class="dot ${k}"></span>` : ''}${l}</button>`).join('');
+}
+function renderList(){
+  const items = filtered();
+  if (!items.length){ $('#list').innerHTML = `<p class="empty">No encontramos colores con esos filtros.<br><button class="chip" style="margin-top:14px" data-reset>Ver todo</button></p>`; return; }
+  const groups = new Map();
+  for (const p of items){ if (!groups.has(p.mat)) groups.set(p.mat, []); groups.get(p.mat).push(p); }
+  let h = '';
+  for (const [m, ps] of groups){
+    const meta = MATS[m] || { d:'' };
+    const avail = ps.filter(p => p.st === 'ok').length;
+    h += `<section class="mat" id="m-${slug(m)}"><div class="mat-h"><h2>${esc(matName(m))}</h2><span class="n">${ps.length} ${m === 'ACCESORIO' ? 'productos' : ps.length === 1 ? 'color' : 'colores'}${avail ? ' · ' + avail + ' disponibles' : ''}</span></div>${meta.d ? `<p class="mat-d">${esc(meta.d)}</p>` : ''}<div class="grid">`;
+    for (const p of ps){
+      h += `<button class="card is-${p.st}" data-key="${esc(p.key)}" aria-label="${esc(matName(p.mat) + ' ' + colorName(p) + ', ' + ST[p.st].label)}">
+        <div class="tile">${tileHTML(p)}${badge(p.st)}</div>
+        <div class="body"><div class="nm">${p.mat !== 'ACCESORIO' ? `<span class="sw" style="background:${p.hex}"></span>` : ''}<div><b>${esc(colorName(p))}</b>${p.es ? `<small>${esc(p.es)}</small>` : ''}</div></div>
+        <div class="vars">${p.vars.map(v => `<div class="var ${v.st}"><span class="dot ${v.st}"></span><span class="lbl">${presLabel(v.pres)}</span><span class="pr">${money(v.price)}</span></div>`).join('')}</div></div>
+      </button>`;
+    }
+    h += `</div></section>`;
+  }
+  $('#list').innerHTML = h;
+}
+function renderFresh(){
+  const el = $('#fresh');
+  el.classList.toggle('stale', usingSnapshot);
+  if (!lastOk) { $('#freshT').textContent = 'Cargando inventario…'; return; }
+  const d = new Date(lastOk);
+  const when = d.toLocaleString('es-VE', { day:'numeric', month:'short', hour:'numeric', minute:'2-digit' });
+  $('#freshT').textContent = usingSnapshot ? `Inventario del ${when}` : `Inventario en vivo · actualizado ${when}`;
+}
+function render(){ renderStats(); renderFilters(); renderList(); renderFresh(); }
+
+/* ===== Ficha ===== */
+let cur = null, curVar = 0;
+function waLink(text){ return 'https://wa.me/' + CONFIG.WHATSAPP + '?text=' + encodeURIComponent(text); }
+function waText(p, v){
+  const what = `${matName(p.mat)} ${colorName(p)}${p.mat !== 'ACCESORIO' ? ' (' + presLabel(v.pres).toLowerCase() + ')' : ''}`;
+  if (v.st === 'ok') return `Hola STRATO, quiero ${what} de ${money(v.price)}. ¿Me lo pueden apartar?`;
+  if (v.st === 'way') return `Hola STRATO, me interesa ${what} que viene en camino. ¿Cuándo llega y puedo apartarlo?`;
+  return `Hola STRATO, ¿me avisan cuando vuelva a llegar ${what}?`;
+}
+function openProduct(key, keepVar){
+  const p = PRODUCTS.find(x => x.key === key); if (!p) return;
+  cur = p;
+  if (!keepVar){ const i = p.vars.findIndex(v => v.st === 'ok'); curVar = i < 0 ? Math.max(0, p.vars.findIndex(v => v.st === 'way')) : i; }
+  curVar = Math.min(curVar, p.vars.length - 1);
+  const v = p.vars[curVar];
+  const sibs = PRODUCTS.filter(x => x.mat === p.mat);
+  const cta = v.st === 'ok' ? 'Pedir por WhatsApp' : v.st === 'way' ? 'Apartar por WhatsApp' : 'Avísame cuando llegue';
+  const ctaNote = v.st === 'ok' ? 'Te confirmamos y coordinamos la entrega.' : v.st === 'way' ? 'Ya está pagado y viene en camino. Te decimos la fecha estimada.' : 'Te escribimos cuando vuelva a haber.';
+  $('#dlg').innerHTML = `<div class="dlg">
+    <div class="tile" style="position:relative">${tileHTML(p)}${badge(v.st)}</div>
+    <button class="x" data-close aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <div class="info">
+      <div><p class="mt">${esc(matName(p.mat))}${p.mat !== 'ACCESORIO' ? ' · Bambu Lab' : ''}</p><h3>${esc(colorName(p))}</h3>${p.es ? `<p class="es">${esc(p.es)}</p>` : ''}</div>
+      ${p.mat !== 'ACCESORIO' && sibs.length > 1 ? `<div><p class="lab">Color: <span>${esc(colorName(p))}</span></p><div class="swatches">${sibs.map(s => `<button class="swb" style="background:${s.hex}" data-sw="${esc(s.key)}" aria-pressed="${s.key === p.key}" aria-label="${esc(colorName(s) + ', ' + ST[s.st].label)}" title="${esc(colorName(s) + ' · ' + ST[s.st].label)}"><i class="${s.st}"></i></button>`).join('')}</div></div>` : ''}
+      <div><p class="lab">${p.mat === 'ACCESORIO' ? 'Precio' : 'Presentación'}</p><div class="opts">${p.vars.map((x,i) => `<button class="opt" data-var="${i}" aria-pressed="${i === curVar}"><span class="t"><b>${p.mat === 'ACCESORIO' ? 'Unidad' : presLabel(x.pres) + ' · 1 kg'}</b><small><span class="dot ${x.st}"></span>${ST[x.st].label}</small></span><span class="pr">${money(x.price)}</span></button>`).join('')}</div></div>
+      ${p.vars.some(x => x.pres === 'REFILL') ? '<p class="note">Refill: el rollo de filamento sin carrete, más económico. Se monta en un carrete reutilizable.</p>' : ''}
+      <div class="cta"><a class="btn pri" target="_blank" rel="noopener" href="${esc(waLink(waText(p, v)))}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3Z"/></svg>${cta}</a><p>${ctaNote}</p></div>
+    </div></div>`;
+  const d = $('#dlg');
+  if (!d.open){ d.showModal(); }
+  history.replaceState(null, '', '#' + p.slug);
+}
+function closeProduct(){ const d = $('#dlg'); if (d.open) d.close(); }
+$('#dlg').addEventListener('close', () => { cur = null; history.replaceState(null, '', location.pathname + location.search); });
+$('#dlg').addEventListener('click', e => {
+  if (e.target === e.currentTarget) return closeProduct();
+  const t = e.target.closest('[data-close],[data-sw],[data-var]'); if (!t) return;
+  if (t.dataset.close !== undefined) closeProduct();
+  else if (t.dataset.sw) openProduct(t.dataset.sw);
+  else { curVar = +t.dataset.var; openProduct(cur.key, true); }
+});
+
+/* ===== Eventos ===== */
+document.addEventListener('click', e => {
+  const c = e.target.closest('.card'); if (c) return openProduct(c.dataset.key);
+  const m = e.target.closest('[data-mat]'); if (m){ UI.mat = m.dataset.mat; lsSet('cat.mat', UI.mat); renderFilters(); renderList(); return; }
+  const s = e.target.closest('[data-st]'); if (s){ UI.st = s.dataset.st; lsSet('cat.st', UI.st); renderFilters(); renderList(); return; }
+  if (e.target.closest('[data-reset]')){ UI.mat = 'ALL'; UI.st = 'ALL'; UI.q = ''; $('#q').value = ''; renderFilters(); renderList(); }
+});
+$('#q').addEventListener('input', e => { UI.q = e.target.value; renderList(); });
+const hdr = $('#top');
+addEventListener('scroll', () => hdr.classList.toggle('stuck', scrollY > 8), { passive:true });
+const general = waLink('Hola STRATO, vi el catálogo y quiero hacer un pedido.');
+$('#waTop').href = general; $('#waFab').href = general;
+
+/* ===== Datos: hoja publicada en vivo, o copia guardada ===== */
+async function load(){
+  let rows = null;
+  if (CONFIG.SHEET_CSV){
+    try {
+      const u = CONFIG.SHEET_CSV + (CONFIG.SHEET_CSV.includes('?') ? '&' : '?') + 't=' + Date.now();
+      const r = await fetch(u, { cache:'no-store' });
+      if (!r.ok) throw new Error(r.status);
+      const txt = await r.text();
+      if (/^\s*</.test(txt)) throw new Error('no csv');
+      rows = parseCSV(txt);
+      usingSnapshot = false; lastOk = Date.now();
+      lsSet('cat.cache', JSON.stringify({ t: lastOk, rows }));
+    } catch (e) { rows = null; }
+  }
+  if (!rows){
+    const c = lsGet('cat.cache');
+    let cached = null; try { cached = c && JSON.parse(c); } catch(e){}
+    try {
+      const r = await fetch('data.json', { cache:'no-store' });
+      const j = await r.json();
+      const t = Date.parse(j.actualizado);
+      if (cached && cached.t > t){ rows = cached.rows; lastOk = cached.t; }
+      else { rows = j.filas; lastOk = t; }
+    } catch (e) { if (cached){ rows = cached.rows; lastOk = cached.t; } }
+    usingSnapshot = true;
+  }
+  if (!rows) { $('#list').innerHTML = '<p class="empty">No pudimos cargar el inventario. Escríbenos por WhatsApp y te decimos qué hay.</p>'; return; }
+  PRODUCTS = build(rows);
+  const openKey = cur && cur.key;
+  render();
+  if (openKey) openProduct(openKey, true);
+  else if (location.hash.length > 1){ const p = PRODUCTS.find(x => x.slug === location.hash.slice(1)); if (p) openProduct(p.key); }
+}
+load();
+setInterval(load, CONFIG.REFRESH_MIN * 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && lastOk && Date.now() - lastOk > 60000) load(); });
+</script>
+</body>
+</html>
