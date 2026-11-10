@@ -722,12 +722,13 @@ function vCobrar() {
   const aps = S.apartados.filter(a => (a.estado || 'APARTADO') === 'APARTADO').map(a => ({ a, t: apTotals(a) }));
   let h = head('Por cobrar');
   h += '<div class="kpis"><div class="kpi hero"><div class="l">Total que te deben</div><div class="v">' + money(tot) + '</div><div class="s">' + cob.length + ' cliente' + (cob.length === 1 ? '' : 's') + ' con ventas sin pagar completas</div></div></div>';
+  h += '<button class="alert p-ok" style="margin-top:10px" data-act="goSub" data-s="pagos"><b>Pagos recibidos</b>&nbsp;· ver quién te ha pagado y cuándo ›</button>';
   h += '<h2 class="sec">Por cliente</h2>';
   if (!cob.length) h += '<div class="card empty"><b>Nadie te debe</b>Las ventas con saldo pendiente aparecen aquí.</div>';
   else h += '<div class="list">' + cob.map(x => {
     const d = daysSince(x.oldest), cl = clienteDe(x.cliente);
     return '<div class="row" style="cursor:default;flex-wrap:wrap"><div class="main"><div class="t">' + esc(x.cliente) + '</div><div class="d">' + x.ventas.length + ' venta' + (x.ventas.length === 1 ? '' : 's') + ' · desde ' + fdate(x.oldest) + ' · <b style="color:' + (d > 15 ? 'var(--bad)' : d > 7 ? 'var(--warn)' : 'var(--muted)') + '">' + d + ' día' + (d === 1 ? '' : 's') + '</b>' + (cl && cl.telefono ? '' : ' · sin teléfono') + '</div></div><div class="end"><div class="big">' + money(x.total) + '</div></div>'
-      + '<div class="btns" style="width:100%"><a class="btn sm pri" target="_blank" rel="noopener" href="' + esc(waLink(cl && cl.telefono, msgCobro(x))) + '">WhatsApp</a><button class="btn sm" data-act="copyCobro" data-cl="' + esc(x.cliente) + '">Copiar mensaje</button>' + (can() ? '<button class="btn sm ghost" data-act="pago" data-id="' + esc(x.ventas[0].v.id) + '">Registrar pago</button>' : '') + '</div></div>';
+      + '<div class="btns" style="width:100%"><a class="btn sm pri" target="_blank" rel="noopener" href="' + esc(waLink(cl && cl.telefono, msgCobro(x))) + '">WhatsApp</a><button class="btn sm" data-act="copyCobro" data-cl="' + esc(x.cliente) + '">Copiar mensaje</button><button class="btn sm" data-act="ecuenta" data-cl="' + esc(x.cliente) + '">Estado de cuenta</button>' + (can() ? '<button class="btn sm ghost" data-act="pago" data-id="' + esc(x.ventas[0].v.id) + '">Registrar pago</button>' : '') + '</div></div>';
   }).join('') + '</div>';
   h += '<h2 class="sec">Detalle por venta</h2>';
   h += cob.length ? '<div class="list">' + cob.flatMap(x => x.ventas).sort((a, b) => a.v.fecha.localeCompare(b.v.fecha)).map(({ v, t }) => '<button class="row" data-act="venta" data-id="' + esc(v.id) + '"><div class="main"><div class="t">' + esc(v.cliente) + ' · N° ' + esc(v.numero) + '</div><div class="d">' + fdate(v.fecha) + ' · total ' + money(t.total) + ' · pagó ' + money(t.pagado) + '</div></div><div class="end"><div class="big">' + money(t.saldo) + '</div>' + pill(t.estado) + '</div></button>').join('') + '</div>' : '';
@@ -743,7 +744,7 @@ function msgCobro(x) {
 }
 
 function vMas() {
-  const items = [['caja','Caja y cierre','Lo que entró por cada método de pago'],['stats','Estadísticas','Compara períodos, vendedores, productos y clientes']].concat(sampleCap ? [['asistente','Pregúntale a tu negocio','Asistente con IA que responde con tus datos']] : []).concat([['apartados','Apartados','Productos reservados por clientes'],['pedidos','Pedidos en camino','Lo que viene desde Bambu Lab'],['compras','Compras','Mercancía recibida y su costo'],['gastos','Gastos','Delivery, empaques, publicidad…'],['clientes','Clientes','Directorio e historial'],['reposicion','Qué pedir','Reposición sugerida según ventas'],['resumen','Resumen anual','Ventas, utilidad y gastos por mes'],['catalogo','Catálogo para clientes','Texto e imagen para WhatsApp'],['ajustes','Ajustes','Tax, envío, métodos de pago, tu nombre, respaldo']]);
+  const items = [['caja','Caja y cierre','Lo que entró por cada método de pago'],['pagos','Pagos recibidos','Todos los pagos de tus clientes, por fecha, cliente y método'],['stats','Estadísticas','Compara períodos, vendedores, productos y clientes']].concat(sampleCap ? [['asistente','Pregúntale a tu negocio','Asistente con IA que responde con tus datos']] : []).concat([['apartados','Apartados','Productos reservados por clientes'],['pedidos','Pedidos en camino','Lo que viene desde Bambu Lab'],['compras','Compras','Mercancía recibida y su costo'],['gastos','Gastos','Delivery, empaques, publicidad…'],['clientes','Clientes','Directorio e historial'],['reposicion','Qué pedir','Reposición sugerida según ventas'],['resumen','Resumen anual','Ventas, utilidad y gastos por mes'],['catalogo','Catálogo para clientes','Texto e imagen para WhatsApp'],['ajustes','Ajustes','Tax, envío, métodos de pago, tu nombre, respaldo']]);
   return head('Más') + '<a class="alert p-mut" style="text-decoration:none;color:inherit" href="' + SHEET_URL + '" target="_blank" rel="noopener"><b>Conectada a tu Google Sheet</b>&nbsp;· abrir la hoja ›</a><div class="list">' + items.map(([k, t, d]) => '<button class="row" data-act="goSub" data-s="' + k + '"><div class="main"><div class="t">' + t + '</div><div class="d">' + d + '</div></div><div class="end muted">›</div></button>').join('') + '<button class="row" data-act="tasa"><div class="main"><div class="t">Tasa del día</div><div class="d">' + (cfg().tasa ? tasaFmt(cfg().tasa) + ' Bs/$' + (cfg().tasaFecha ? ' · del ' + fdate(cfg().tasaFecha) : '') : 'Sin definir') + '</div></div><div class="end muted">›</div></button></div><p class="tagline" style="text-align:center;margin:28px 0 4px">Calidad capa a capa.</p><p class="muted small" style="text-align:center;margin:0">' + esc(cfg().negocio.nombre) + ' · ' + esc(cfg().negocio.ciudad || '') + '</p>';
 }
 
@@ -1053,6 +1054,162 @@ async function ask(q) {
   } finally { S.asking = null; render(); }
 }
 
+/* ============ estado de cuenta y pagos recibidos ============ */
+Object.assign(S, { pgP: 'mes', pgCli: '', pgMet: '' });
+const sameName = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+const imgLbl = () => (typeof saveBlob === 'function' ? 'Compartir imagen' : 'Guardar imagen');
+function estadoCuenta(nombre) {
+  const vs = S.ventas.filter(v => sameName(v.cliente, nombre)).sort((a, b) => a.fecha.localeCompare(b.fecha) || num(a.numero) - num(b.numero));
+  const movs = []; let comprado = 0, pagado = 0, debe = 0;
+  for (const v of vs) {
+    const t = vt(v); comprado += t.total; pagado += t.pagado; debe += t.saldo;
+    movs.push({ fecha: v.fecha, k: v.fecha, o: 0, tipo: 'cargo', desc: 'Venta N° ' + v.numero + ' · ' + t.units + ' producto' + (t.units === 1 ? '' : 's'), monto: t.total, v });
+    let sum = 0;
+    for (const p of ventaPagos(v)) {
+      sum += p.monto;
+      const antes = p.fecha < v.fecha;
+      movs.push({ fecha: antes ? v.fecha : p.fecha, k: antes ? v.fecha : p.fecha, o: 1, tipo: 'abono', desc: (p.tipo === 'APARTADO' ? 'Abono del apartado ' + p.numero + (antes ? ' (' + fdate(p.fecha).slice(0, 5) + ')' : '') : 'Pago de la venta N° ' + v.numero) + (p.metodo ? ' · ' + title(p.metodo) : ''), monto: p.monto, v });
+    }
+    const rest = r2(t.pagado - sum);
+    if (rest > 0.005) movs.push({ fecha: v.fecha, k: v.fecha, o: 1, tipo: 'abono', desc: 'Pagos anteriores de la venta N° ' + v.numero, monto: rest, v });
+  }
+  movs.sort((a, b) => a.k.localeCompare(b.k) || a.o - b.o);
+  let saldo = 0; for (const m of movs) { saldo += m.tipo === 'cargo' ? m.monto : -m.monto; m.saldo = r2(saldo); }
+  const aps = S.apartados.filter(a => sameName(a.cliente, nombre) && (a.estado || 'APARTADO') === 'APARTADO').map(a => ({ a, t: apTotals(a) }));
+  const c = clienteDe(nombre);
+  return { nombre: (c && c.nombre) || nombre, c, vs, movs, aps, comprado: r2(comprado), pagado: r2(pagado), debe: r2(debe) };
+}
+function ecuentaTexto(ec) {
+  const n = cfg().negocio;
+  let s = '*' + n.nombre.toUpperCase() + '*\nEstado de cuenta\nCliente: ' + ec.nombre + '\nAl ' + fdate(today()) + '\n';
+  if (ec.movs.length) s += '\n*Movimientos*\n' + ec.movs.map(m => fdate(m.fecha) + ' · ' + m.desc + ': ' + (m.tipo === 'cargo' ? '+' : '−') + money(m.monto) + ' → saldo ' + money(m.saldo)).join('\n') + '\n';
+  s += '\nTotal comprado: ' + money(ec.comprado) + '\nTotal pagado: ' + money(ec.pagado) + '\n*' + (ec.debe > 0.005 ? 'Saldo pendiente: ' + money(ec.debe) : 'Estás al día. ¡Gracias!') + '*\n';
+  if (ec.aps.length) s += '\n*Apartados activos* (no suman al saldo hasta la entrega)\n' + ec.aps.map(({ a, t }) => '• ' + a.numero + ' del ' + fdate(a.fecha) + ': total ' + money(t.total) + ', abonado ' + money(t.pagado) + ', resta ' + money(t.saldo)).join('\n') + '\n';
+  return s + '\n_Calidad capa a capa._';
+}
+function ecuentaShow(nombre) {
+  const ec = estadoCuenta(nombre), tel = ec.c && ec.c.telefono;
+  let b = '<p class="muted small" style="margin:-4px 0 10px">Al ' + fdate(today()) + ' · montos en dólares</p>';
+  b += '<div class="card grid3"><div class="stat"><div class="l">Comprado</div><div class="v">' + money(ec.comprado) + '</div></div><div class="stat"><div class="l">Pagado</div><div class="v">' + money(ec.pagado) + '</div></div><div class="stat"><div class="l">Saldo</div><div class="v" style="color:' + (ec.debe > 0.005 ? 'var(--bad)' : 'var(--ok)') + '">' + money(ec.debe) + '</div></div></div>';
+  b += '<h2 class="sec">Movimientos</h2>';
+  b += ec.movs.length ? '<div class="list">' + ec.movs.map(m => '<button class="row" data-act="venta" data-id="' + esc(m.v.id) + '"><div class="main"><div class="t">' + esc(m.desc) + '</div><div class="d">' + fdate(m.fecha) + '</div></div><div class="end"><div class="big" style="color:' + (m.tipo === 'abono' ? 'var(--ok)' : 'inherit') + '">' + (m.tipo === 'cargo' ? '+' : '−') + money(m.monto) + '</div><div class="d">saldo ' + money(m.saldo) + '</div></div></button>').join('') + '</div>'
+    : '<div class="card empty"><b>Sin compras todavía</b>Las ventas y pagos de este cliente aparecerán aquí.</div>';
+  if (ec.aps.length) b += '<h2 class="sec">Apartados activos<span class="r">no suman al saldo</span></h2><div class="list">' + ec.aps.map(({ a, t }) => '<button class="row" data-act="apartado" data-id="' + esc(a.id) + '"><div class="main"><div class="t">' + esc(a.numero) + ' · ' + fdate(a.fecha) + '</div><div class="d">total ' + money(t.total) + ' · abonado ' + money(t.pagado) + '</div></div><div class="end"><div class="big">' + money(t.saldo) + '</div><div class="d">resta</div></div></button>').join('') + '</div>';
+  b += '<div class="btns full" style="margin-top:14px"><button class="btn pri" data-act="ecImg" data-cl="' + esc(ec.nombre) + '">Ver como imagen</button><button class="btn" data-act="ecCopy" data-cl="' + esc(ec.nombre) + '">Copiar texto</button><a class="btn" target="_blank" rel="noopener" href="' + esc(waLink(tel, ecuentaTexto(ec))) + '">WhatsApp</a></div>';
+  openSheet('Estado de cuenta · ' + ec.nombre, b);
+}
+function ecuentaImg(nombre) {
+  const ec = estadoCuenta(nombre);
+  openSheet('Estado de cuenta · ' + ec.nombre, '<canvas id="eccv" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line);display:block"></canvas><div class="btns full" style="margin-top:12px"><button class="btn pri" data-act="saveImg" data-n="' + esc('Estado-de-cuenta-' + String(ec.nombre).replace(/\s+/g, '_') + '-' + today()) + '">' + imgLbl() + '</button><button class="btn" data-act="ecuenta" data-cl="' + esc(ec.nombre) + '">Volver</button></div>', async () => { try { await document.fonts.ready; await logoReady(); } catch (e) {} drawEcuenta($('#eccv'), ec); });
+}
+function drawEcuenta(cv, ec) {
+  const n = cfg().negocio, W = 1080, rowH = 74, apH = ec.aps.length ? 80 + ec.aps.length * 56 : 0;
+  const H = 990 + Math.max(1, ec.movs.length) * rowH + apH;
+  cv.width = W; cv.height = H; const x = cv.getContext('2d');
+  x.fillStyle = BR.hueso; x.fillRect(0, 0, W, H);
+  x.fillStyle = BR.noche; x.fillRect(0, 0, W, 250);
+  layers(x, 0, 236, W, 14, 'rgba(0,223,96,.55)');
+  drawLogo(x, 70, 50, 140);
+  x.fillStyle = BR.verde; x.fillRect(W - 400, 70, 330, 76);
+  x.fillStyle = BR.noche; x.font = '700 28px ' + FD; x.textAlign = 'center'; x.fillText('ESTADO DE CUENTA', W - 235, 119);
+  x.fillStyle = BR.mutedD; x.font = '500 22px ' + FB; x.fillText('Al ' + fdate(today()), W - 235, 182); x.fillText('Montos en dólares', W - 235, 212); x.textAlign = 'left';
+  let y = 320;
+  x.fillStyle = BR.muted; x.font = '700 22px ' + FB; x.fillText('CLIENTE', 70, y);
+  y += 46; x.fillStyle = BR.noche; x.font = '700 40px ' + FD; x.fillText(String(ec.nombre).slice(0, 34), 70, y);
+  const sub = [ec.c && ec.c.telefono, ec.c && ec.c.cedula].filter(Boolean).join(' · ');
+  if (sub) { x.fillStyle = BR.muted; x.font = '500 22px ' + FB; x.fillText(sub, 70, y + 34); }
+  // resumen: comprado · pagado · saldo
+  y += 70; const bw = (W - 140 - 40) / 3;
+  const box = (i, l, v, dark) => { const bx = 70 + i * (bw + 20); x.fillStyle = dark ? BR.noche : '#FFFFFF'; x.fillRect(bx, y, bw, 110); if (!dark) { x.strokeStyle = BR.line; x.lineWidth = 2; x.strokeRect(bx + 1, y + 1, bw - 2, 108); } x.fillStyle = dark ? BR.mutedD : BR.muted; x.font = '700 20px ' + FB; x.fillText(l, bx + 22, y + 38); x.fillStyle = dark ? BR.verde : BR.noche; x.font = '700 36px ' + FD; x.fillText(v, bx + 22, y + 86); };
+  box(0, 'TOTAL COMPRADO', money(ec.comprado)); box(1, 'TOTAL PAGADO', money(ec.pagado)); box(2, ec.debe > 0.005 ? 'SALDO PENDIENTE' : 'AL DÍA', money(ec.debe), true);
+  y += 160;
+  // tabla de movimientos
+  const cX = [70, 180, 690, 850, W - 70], conW = 360;
+  x.fillStyle = BR.muted; x.font = '700 19px ' + FB;
+  x.fillText('FECHA', cX[0], y); x.fillText('CONCEPTO', cX[1], y); x.textAlign = 'right'; x.fillText('CARGO', cX[2], y); x.fillText('ABONO', cX[3], y); x.fillText('SALDO', cX[4], y); x.textAlign = 'left';
+  y += 18; x.fillStyle = BR.line; x.fillRect(70, y, W - 140, 3); y += 12;
+  if (!ec.movs.length) { y += 46; x.fillStyle = BR.muted; x.font = '500 24px ' + FB; x.fillText('Sin compras registradas.', 70, y); y += rowH - 46; }
+  ec.movs.forEach((m, i) => {
+    if (i % 2) { x.fillStyle = 'rgba(5,16,34,.035)'; x.fillRect(70, y, W - 140, rowH); }
+    const ty = y + 46;
+    x.fillStyle = BR.muted; x.font = '500 22px ' + FD; x.fillText(fdate(m.fecha).slice(0, 5), cX[0], ty);
+    x.fillStyle = BR.noche; x.font = (m.tipo === 'cargo' ? '700 ' : '500 ') + '21px ' + FB;
+    let d = m.desc; while (x.measureText(d).width > conW && d.length > 4) d = d.slice(0, -2); if (d !== m.desc) d = d.trim() + '…';
+    x.fillText(d, cX[1], ty);
+    x.textAlign = 'right'; x.font = '600 24px ' + FD;
+    if (m.tipo === 'cargo') { x.fillStyle = BR.noche; x.fillText(money(m.monto), cX[2], ty); }
+    else { x.fillStyle = '#00803A'; x.fillText('−' + money(m.monto), cX[3], ty); }
+    x.fillStyle = BR.noche; x.font = '700 24px ' + FD; x.fillText(money(m.saldo), cX[4], ty); x.textAlign = 'left';
+    y += rowH;
+  });
+  y += 6; x.fillStyle = BR.line; x.fillRect(70, y, W - 140, 3); y += 40;
+  // saldo final
+  x.fillStyle = BR.noche; x.fillRect(70, y, W - 140, 84);
+  x.fillStyle = BR.hueso; x.font = '700 30px ' + FD; x.fillText(ec.debe > 0.005 ? 'Saldo pendiente' : 'Estás al día', 100, y + 54);
+  x.fillStyle = BR.verde; x.font = '700 42px ' + FD; x.textAlign = 'right'; x.fillText(money(ec.debe), W - 100, y + 56); x.textAlign = 'left';
+  y += 124;
+  if (ec.aps.length) {
+    x.fillStyle = BR.noche; x.font = '700 26px ' + FD; x.fillText('Apartados activos', 70, y);
+    x.fillStyle = BR.muted; x.font = '500 20px ' + FB; x.fillText('No suman al saldo hasta que se entregan.', 70, y + 30);
+    y += 70;
+    for (const { a, t } of ec.aps) {
+      x.fillStyle = BR.noche; x.font = '600 23px ' + FB; x.fillText(a.numero + ' · ' + fdate(a.fecha) + ' · total ' + money(t.total) + ' · abonado ' + money(t.pagado), 70, y);
+      x.textAlign = 'right'; x.font = '700 24px ' + FD; x.fillText('resta ' + money(t.saldo), W - 70, y); x.textAlign = 'left';
+      y += 56;
+    }
+  }
+  x.fillStyle = BR.noche; x.fillRect(0, H - 130, W, 130);
+  x.fillStyle = BR.verde; x.font = '700 34px ' + FD; x.textAlign = 'center'; x.fillText('Calidad capa a capa.', W / 2, H - 72);
+  x.fillStyle = BR.mutedD; x.font = '500 22px ' + FB;
+  x.fillText([n.nombre, n.whatsapp ? 'WhatsApp ' + n.whatsapp : '', n.instagram || ''].filter(Boolean).join('   ·   '), W / 2, H - 34); x.textAlign = 'left';
+}
+function pagosFiltro() {
+  const t = today(), [y, m] = t.split('-').map(Number);
+  let r = null;
+  if (S.pgP === 'semana') r = rangeOfP('semana');
+  else if (S.pgP === 'mes') r = rangeOfP('mes');
+  else if (S.pgP === 'mesant') r = rangeOfP('mes', (m === 1 ? (y - 1) + '-12' : y + '-' + pad(m - 1)) + '-01');
+  return S.pagos.filter(p => (!r || inR(p.fecha, r)) && (!S.pgCli || sameName(p.cliente, S.pgCli)) && (!S.pgMet || (p.metodo || 'SIN MÉTODO') === S.pgMet))
+    .sort((a, b) => b.fecha.localeCompare(a.fecha) || b.row - a.row);
+}
+const PG_LBL = { semana: 'Esta semana', mes: 'Este mes', mesant: 'Mes pasado', todo: 'Todo' };
+function pagosTexto(list) {
+  const tot = list.reduce((s, p) => s + p.monto, 0);
+  return '*Pagos recibidos · ' + cfg().negocio.nombre + '*\n' + PG_LBL[S.pgP] + (S.pgCli ? ' · ' + S.pgCli : '') + (S.pgMet ? ' · ' + title(S.pgMet) : '') + '\n\n'
+    + list.map(p => fdate(p.fecha) + ' · ' + p.cliente + ' · ' + (p.tipo === 'VENTA' ? 'venta N° ' : 'apartado ') + p.numero + (p.metodo ? ' · ' + title(p.metodo) : '') + ': ' + money(p.monto)).join('\n')
+    + '\n\n*Total: ' + money(tot) + '* (' + list.length + ' pago' + (list.length === 1 ? '' : 's') + ')';
+}
+SUBS.pagos = function () {
+  const list = pagosFiltro(), tot = list.reduce((s, p) => s + p.monto, 0);
+  const clientes = [...new Set(S.pagos.map(p => p.cliente).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const metodos = [...new Set(S.pagos.map(p => p.metodo || 'SIN MÉTODO'))].sort();
+  let h = head('Pagos recibidos', true);
+  h += '<div class="chips">' + Object.entries(PG_LBL).map(([k, l]) => '<button class="chip" data-act="pgP" data-p="' + k + '" aria-pressed="' + (S.pgP === k) + '">' + l + '</button>').join('') + '</div>';
+  h += '<div class="fg2" style="margin-bottom:12px"><select id="pg_cli" class="search" style="margin:0" aria-label="Cliente"><option value="">Todos los clientes</option>' + clientes.map(c => '<option' + (sameName(c, S.pgCli) ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select>'
+    + '<select id="pg_met" class="search" style="margin:0" aria-label="Método de pago"><option value="">Todos los métodos</option>' + metodos.map(m => '<option value="' + esc(m) + '"' + (m === S.pgMet ? ' selected' : '') + '>' + esc(title(m)) + '</option>').join('') + '</select></div>';
+  h += '<div class="kpis"><div class="kpi hero"><div class="l">Recibido · ' + esc(PG_LBL[S.pgP]) + (S.pgCli ? ' · ' + esc(S.pgCli) : '') + '</div><div class="v">' + money(tot) + '</div><div class="s">' + list.length + ' pago' + (list.length === 1 ? '' : 's') + (list.length ? ' · promedio ' + money(tot / list.length) : '') + '</div></div></div>';
+  const byM = {}; for (const p of list) { const k = p.metodo || 'SIN MÉTODO'; byM[k] = (byM[k] || 0) + p.monto; }
+  const ms = Object.entries(byM).sort((a, b) => b[1] - a[1]);
+  if (ms.length > 1) h += '<h2 class="sec">Por método</h2><div class="card fg">' + ms.map(([m, v]) => '<div><div style="display:flex;justify-content:space-between;font-size:13px"><span>' + esc(title(m)) + '</span><span class="num">' + money(v) + ' · ' + (v / tot * 100).toFixed(0) + '%</span></div><div class="bar"><i style="width:' + (v / tot * 100).toFixed(1) + '%"></i></div></div>').join('') + '</div>';
+  if (S.pgCli) h += '<div class="btns" style="margin-top:12px"><button class="btn sm" data-act="ecuenta" data-cl="' + esc(S.pgCli) + '">Estado de cuenta de ' + esc(S.pgCli) + '</button></div>';
+  if (!list.length) h += '<div class="card empty" style="margin-top:12px"><b>Sin pagos en este filtro</b>Prueba otro período o quita el filtro de cliente.</div>';
+  else {
+    let mk = '';
+    h += list.map(p => {
+      let s = ''; const k = p.fecha.slice(0, 7);
+      if (k !== mk) { if (mk) s += '</div>'; mk = k; const mt = list.filter(z => z.fecha.startsWith(k)).reduce((a, z) => a + z.monto, 0); s += '<h2 class="sec">' + MESES[+k.slice(5) - 1] + ' ' + k.slice(0, 4) + '<span class="r num">' + money(mt) + '</span></h2><div class="list">'; }
+      const d = p.tipo === 'VENTA' ? S.ventas.find(v => String(v.numero) === String(p.numero)) : S.apartados.find(a => a.numero === p.numero);
+      return s + '<button class="row" ' + (d ? 'data-act="' + (p.tipo === 'VENTA' ? 'venta' : 'apartado') + '" data-id="' + esc(d.id) + '"' : 'disabled') + '><div class="main"><div class="t">' + esc(p.cliente) + '</div><div class="d">' + fdate(p.fecha) + ' · ' + (p.tipo === 'VENTA' ? 'venta N° ' : 'apartado ') + esc(p.numero) + (p.metodo ? ' · ' + esc(title(p.metodo)) : '') + (p.vendedor ? ' · ' + esc(p.vendedor) : '') + '</div></div><div class="end"><div class="big" style="color:var(--ok)">' + money(p.monto) + '</div></div></button>';
+    }).join('') + '</div>';
+    h += '<div class="btns full" style="margin-top:12px"><button class="btn" data-act="copyPagos">Copiar lista</button></div>';
+  }
+  if (S.pgP === 'todo') {
+    let sin = 0; for (const v of S.ventas) { if (S.pgCli && !sameName(v.cliente, S.pgCli)) continue; const rest = r2(vt(v).pagado - ventaPagos(v).reduce((a, p) => a + p.monto, 0)); if (rest > 0.005) sin += rest; }
+    if (sin > 0.005 && !S.pgMet) h += '<p class="muted small" style="margin-top:12px">Además hay ' + money(sin) + ' en pagos registrados antes de que existiera la pestaña Pagos, sin fecha ni método. Sí cuentan en el estado de cuenta de cada cliente.</p>';
+  }
+  return h;
+};
+
 /* ============ hoja (modal) ============ */
 let sheetClose = null;
 function openSheet(t, body, mount) {
@@ -1203,7 +1360,7 @@ function ventaDetail(id) {
   openSheet('Venta N° ' + v.numero, b);
 }
 function ventaPagos(v) {
-  const ap = (String(v.notas || '').match(/apartado (A-\d+)/) || [])[1];
+  const ap = (String(v.notas || '').match(/Entrega del apartado (A-\d+)/i) || [])[1];
   return pagosDe('VENTA', v.numero).concat(ap ? pagosDe('APARTADO', ap) : []).sort((a, b) => a.fecha.localeCompare(b.fecha));
 }
 function pagosList(list, pagado) {
@@ -1283,7 +1440,10 @@ function clienteDetail(id) {
   b += '<div class="card small" style="margin-top:10px;display:grid;gap:4px">' + [['Teléfono', c.telefono], ['Cédula / RIF', c.cedula], ['Dirección', c.direccion], ['Ciudad', c.ciudad], ['Correo', c.correo], ['Notas', c.notas]].filter(x => x[1]).map(x => '<div><span class="muted">' + x[0] + ':</span> ' + esc(x[1]) + '</div>').join('') + (c.telefono ? '' : '<div class="muted">Sin teléfono. Agrégalo para enviarle mensajes por WhatsApp.</div>') + '</div>';
   if (vs.length) b += '<h2 class="sec">Ventas</h2><div class="list">' + vs.map(v => { const t = vt(v); return '<button class="row" data-act="venta" data-id="' + esc(v.id) + '"><div class="main"><div class="t">N° ' + esc(v.numero) + ' · ' + fdate(v.fecha) + '</div><div class="d">' + t.units + ' productos</div></div><div class="end"><div class="big">' + money(t.total) + '</div>' + pill(t.estado) + '</div></button>'; }).join('') + '</div>';
   if (aps.length) b += '<h2 class="sec">Apartados</h2><div class="list">' + aps.map(a => '<button class="row" data-act="apartado" data-id="' + esc(a.id) + '"><div class="main"><div class="t">' + esc(a.numero) + ' · ' + fdate(a.fecha) + '</div></div><div class="end"><div class="big">' + money(apTotals(a).total) + '</div>' + pill(a.estado || 'APARTADO') + '</div></button>').join('') + '</div>';
-  b += '<div class="btns full" style="margin-top:12px">' + (c.telefono ? '<a class="btn pri" target="_blank" rel="noopener" href="' + esc(waLink(c.telefono, 'Hola ' + String(c.nombre).split(' ')[0] + ', ')) + '">WhatsApp</a>' : '') + (can() ? '<button class="btn" data-act="editCliente" data-id="' + esc(c.id) + '">Editar</button>' : '') + '</div>';
+  const pcs = S.pagos.filter(p => sameName(p.cliente, c.nombre)).sort((x, y) => y.fecha.localeCompare(x.fecha));
+  if (pcs.length) b += '<h2 class="sec">Pagos recibidos<span class="r num">' + money(pcs.reduce((a, p) => a + p.monto, 0)) + '</span></h2><div class="list">' + pcs.slice(0, 6).map(p => '<div class="row" style="cursor:default"><div class="main"><div class="t">' + money(p.monto) + '</div><div class="d">' + fdate(p.fecha) + ' · ' + (p.tipo === 'VENTA' ? 'venta N° ' : 'apartado ') + esc(p.numero) + (p.metodo ? ' · ' + esc(title(p.metodo)) : '') + '</div></div></div>').join('') + (pcs.length > 6 ? '<button class="row" data-act="pagosCli" data-cl="' + esc(c.nombre) + '"><div class="main"><div class="t">Ver los ' + pcs.length + ' pagos</div></div><div class="end muted">›</div></button>' : '') + '</div>';
+  b += '<div class="btns full" style="margin-top:12px"><button class="btn pri" data-act="ecuenta" data-cl="' + esc(c.nombre) + '">Estado de cuenta</button></div>';
+  b += '<div class="btns full" style="margin-top:8px">' + (c.telefono ? '<a class="btn pri" target="_blank" rel="noopener" href="' + esc(waLink(c.telefono, 'Hola ' + String(c.nombre).split(' ')[0] + ', ')) + '">WhatsApp</a>' : '') + (can() ? '<button class="btn" data-act="editCliente" data-id="' + esc(c.id) + '">Editar</button>' : '') + '</div>';
   openSheet(c.nombre, b);
 }
 
@@ -1294,8 +1454,7 @@ function reciboTexto(kind, d) {
   const n = cfg().negocio, isV = kind === 'venta', t = isV ? vt(d) : apTotals(d);
   let s = '*' + n.nombre.toUpperCase() + '*\n' + (isV ? 'Recibo de venta N° ' + d.numero : 'Comprobante de apartado ' + d.numero) + '\nFecha: ' + fdate(d.fecha) + '\nCliente: ' + d.cliente + '\n\n';
   s += (d.items || []).map(it => '• ' + num(it.cantidad) + ' × ' + prodName(it.codigo) + ' — ' + money(num(it.cantidad) * num(it.precio) - num(it.descuento)) + (num(it.descuento) ? ' (desc. ' + money(num(it.descuento)) + ')' : '')).join('\n');
-  const tzR = isV ? num(d.tasa) : cfg().tasa;
-  s += '\n\n*Total: ' + money(t.total) + '*\n' + (tzR ? 'En bolívares: ' + bsFmt(t.total * tzR) + ' (tasa ' + tasaFmt(tzR) + ')\n' : '') + (isV ? 'Pagado' : 'Abonado') + ': ' + money(t.pagado) + '\n' + (t.saldo > 0 ? (isV ? 'Saldo pendiente' : 'Resta por pagar') + ': ' + money(t.saldo) + '\n' : (isV ? 'Pagado completo. ¡Gracias!\n' : ''));
+  s += '\n\n*Total: ' + money(t.total) + '*\n' + (isV ? 'Pagado' : 'Abonado') + ': ' + money(t.pagado) + '\n' + (t.saldo > 0 ? (isV ? 'Saldo pendiente' : 'Resta por pagar') + ': ' + money(t.saldo) + '\n' : (isV ? 'Pagado completo. ¡Gracias!\n' : ''));
   if (!isV) s += 'Los productos quedan reservados a tu nombre.\n';
   return s + '\nGracias por tu compra en ' + n.nombre + '.\n_Calidad capa a capa._';
 }
@@ -1310,8 +1469,8 @@ function drawLogo(x, X, Y, h) { if (LOGO_L.complete && LOGO_L.naturalWidth) x.dr
 function layers(x, X, Y, w, h, color) { x.fillStyle = color; for (let yy = Y; yy < Y + h; yy += 10) x.fillRect(X, yy, w, 2); }
 function drawRecibo(cv, kind, d) {
   const isV = kind === 'venta', t = isV ? vt(d) : apTotals(d), n = cfg().negocio;
-  const W = 1080, items = d.items || [], tzC = isV ? num(d.tasa) : cfg().tasa;
-  const H = 900 + items.length * 120 + (t.desc ? 52 : 0) + (tzC ? 52 : 0) + (isV ? 0 : 60);
+  const W = 1080, items = d.items || [];
+  const H = 900 + items.length * 120 + (t.desc ? 52 : 0) + (isV ? 0 : 60);
   cv.width = W; cv.height = H; const x = cv.getContext('2d');
   x.fillStyle = BR.hueso; x.fillRect(0, 0, W, H);
   // cabecera noche con el logo claro
@@ -1339,7 +1498,6 @@ function drawRecibo(cv, kind, d) {
   const rowT = (l, v, big) => { x.fillStyle = big ? BR.noche : BR.muted; x.font = (big ? '700 40px ' + FD : '500 27px ' + FB); x.fillText(l, 70, y); x.font = (big ? '700 44px ' : '600 30px ') + FD; x.textAlign = 'right'; x.fillText(v, W - 70, y); x.textAlign = 'left'; y += big ? 64 : 52; };
   if (t.desc) rowT('Descuentos', '-' + money(t.desc));
   rowT('Total', money(t.total), true);
-  if (tzC) rowT('En Bs (tasa ' + tasaFmt(tzC) + ')', bsFmt(t.total * tzC));
   rowT(isV ? 'Pagado' : 'Abonado', money(t.pagado));
   // saldo: bloque noche con la cifra en verde
   y += 22; x.fillStyle = BR.noche; x.fillRect(70, y - 46, W - 140, 84);
@@ -1409,6 +1567,12 @@ document.addEventListener('click', async ev => {
     case 'year': S.year = +b.dataset.y; render(); break;
     case 'catCam': S.catEnCamino = b.dataset.v === '1'; render(); break;
     case 'catBs': S.catBs = !S.catBs; render(); break;
+    case 'ecuenta': ecuentaShow(b.dataset.cl); break;
+    case 'ecImg': ecuentaImg(b.dataset.cl); break;
+    case 'ecCopy': copyText(ecuentaTexto(estadoCuenta(b.dataset.cl))); break;
+    case 'pgP': S.pgP = b.dataset.p; render(); break;
+    case 'pagosCli': S.pgCli = b.dataset.cl; S.pgP = 'todo'; S.pgMet = ''; closeSheet(); go('mas', 'pagos'); break;
+    case 'copyPagos': copyText(pagosTexto(pagosFiltro())); break;
     case 'cajaP': S.cajaP = b.dataset.p; render(); break;
     case 'statP': S.statP = b.dataset.p; render(); break;
     case 'copyCierre': copyText(cierreTexto()); break;
@@ -1447,7 +1611,7 @@ document.addEventListener('click', async ev => {
     case 'entregar': await entregar(id); break;
     case 'recibo': reciboShow(b.dataset.k, id); break;
     case 'copyRecibo': { const d = (b.dataset.k === 'venta' ? S.ventas : S.apartados).find(x => x.id === id); copyText(reciboTexto(b.dataset.k, d)); break; }
-    case 'saveImg': saveCanvas($('#rcv') || $('#catcv'), b.dataset.n); break;
+    case 'saveImg': saveCanvas($('#rcv') || $('#catcv') || $('#eccv'), b.dataset.n); break;
     case 'copyCobro': { const x = porCobrar().find(z => z.cliente === b.dataset.cl); if (x) copyText(msgCobro(x)); break; }
     case 'copyRepo': { const rows = Object.values(C.P).filter(e => e.sugerido > 0); copyText('Pedido sugerido ' + fdate(today()) + '\n' + rows.map(e => '• ' + e.sugerido + ' × ' + e.p.codigo + ' ' + title(e.p.color) + ' (' + e.p.tipo + ', ' + title(e.p.presentacion) + ')').join('\n') + '\nCosto estimado: ' + money(rows.reduce((s, e) => s + e.costoRep, 0))); break; }
     case 'catCopy': copyText(catText()); break;
@@ -1485,7 +1649,7 @@ document.addEventListener('input', ev => {
   if (t.id === 'pk_q') { const q = t.value.trim().toLowerCase(); document.querySelectorAll('#pkGrid .pick').forEach(b => { b.hidden = !!q && !b.dataset.s.includes(q); }); return; }
   if (t.closest && t.closest('#sheetCard form')) { updateLines(); pgBs(); }
 });
-document.addEventListener('change', ev => { if (ev.target.id === 'cajaDia') { if (ev.target.value) { S.cajaP = 'dia'; S.cajaDia = ev.target.value; render(); } return; } if (ev.target.closest && ev.target.closest('#sheetCard form')) { if (ev.target.classList.contains('l-p')) { const pr = ev.target.closest('[data-line]').querySelector('.l-pr'); if (pr) pr.value = ''; } updateLines(); } });
+document.addEventListener('change', ev => { if (ev.target.id === 'pg_cli' || ev.target.id === 'pg_met') { S[ev.target.id === 'pg_cli' ? 'pgCli' : 'pgMet'] = ev.target.value; render(); return; } if (ev.target.id === 'cajaDia') { if (ev.target.value) { S.cajaP = 'dia'; S.cajaDia = ev.target.value; render(); } return; } if (ev.target.closest && ev.target.closest('#sheetCard form')) { if (ev.target.classList.contains('l-p')) { const pr = ev.target.closest('[data-line]').querySelector('.l-pr'); if (pr) pr.value = ''; } updateLines(); } });
 document.addEventListener('keydown', ev => { if (ev.target && ev.target.id === 'askQ' && ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); ask(ev.target.value); return; } if (ev.key === 'Escape' && !$('#sheet').hidden) closeSheet(); });
 
 async function setApEstado(a, estado, nota) {
