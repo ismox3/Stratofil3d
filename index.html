@@ -324,6 +324,10 @@ function compraLine(x) {
   const total = sub + tax + env;
   return { q, sub, tax, est, env, total, unit: q ? total / q : 0 };
 }
+function apQuien(codigo) {
+  const n = [...new Set(S.apartados.filter(a => (a.estado || 'APARTADO') === 'APARTADO' && (a.items || []).some(it => it.codigo === codigo)).map(a => a.cliente + ' ' + a.numero))];
+  return n.join(', ');
+}
 function calc() {
   const c = cfg(), P = {};
   const blank = p => ({ p, compradas:0, vendidas:0, sub:0, tax:0, env:0, tot:0, enCamino:0, apartado:0, vend90:0 });
@@ -336,17 +340,20 @@ function calc() {
   for (const a of S.apartados) if ((a.estado || 'APARTADO') === 'APARTADO') for (const it of a.items || []) get(it.codigo).apartado += num(it.cantidad);
   for (const k in P) {
     const e = P[k], q = e.compradas;
-    e.disp = q - e.vendidas;
+    e.enMano = q - e.vendidas;
+    e.apStock = Math.min(e.apartado, Math.max(0, e.enMano));
+    e.apCamino = e.apartado - e.apStock;
+    e.disp = e.enMano - e.apStock;
     e.costoProm = q ? e.sub / q : null; e.taxProm = q ? e.tax / q : null; e.envProm = q ? e.env / q : null; e.totalProm = q ? e.tot / q : null;
     e.precio = num(e.p.precio);
     e.util = e.totalProm !== null && e.precio ? e.precio - e.totalProm : null;
     e.markup = e.util !== null && e.totalProm ? e.util / e.totalProm : null;
     e.margen = e.util !== null && e.precio ? e.util / e.precio : null;
-    e.valor = e.totalProm !== null ? e.disp * e.totalProm : 0;
+    e.valor = e.totalProm !== null ? e.enMano * e.totalProm : 0;
     e.estado = e.disp < 0 ? 'REVISAR' : e.disp <= c.stockMin ? (e.enCamino > 0 ? 'EN CAMINO' : 'STOCK BAJO') : 'OK';
-    e.libre = e.disp + e.enCamino - e.apartado;
+    e.libre = e.enMano + e.enCamino - e.apartado;
     e.prom = e.vend90 / 3;
-    e.sugerido = Math.max(0, Math.ceil(e.prom * c.mesesCobertura - 1e-9) + c.stockMin - e.disp - e.enCamino);
+    e.sugerido = Math.max(0, Math.ceil(e.prom * c.mesesCobertura - 1e-9) + c.stockMin - e.libre);
     e.costoRep = e.sugerido * (e.totalProm || 0);
     e.prioridad = (e.disp <= c.stockMin && e.enCamino > 0) ? 'EN CAMINO' : e.disp <= 0 ? 'URGENTE' : e.sugerido > 0 ? 'PEDIR' : e.disp <= c.stockMin ? 'VIGILAR' : 'OK';
   }
@@ -754,7 +761,7 @@ const SUBS = {
     let h = head('Apartados', true);
     if (can()) h += '<div class="btns" style="margin-bottom:10px"><button class="btn pri sm" data-act="newApartado">+ Apartado</button></div>';
     if (!list.length) return h + '<div class="card empty"><b>Sin apartados</b>Cuando un cliente reserve productos, regístralo aquí.</div>';
-    return h + '<div class="list">' + list.map(a => { const t = apTotals(a); const est = a.estado || 'APARTADO'; const listos = (a.items || []).every(it => (C.P[it.codigo] || {}).disp >= num(it.cantidad));
+    return h + '<div class="list">' + list.map(a => { const t = apTotals(a); const est = a.estado || 'APARTADO'; const listos = (a.items || []).every(it => (C.P[it.codigo] || {}).enMano >= num(it.cantidad));
       return '<button class="row" data-act="apartado" data-id="' + esc(a.id) + '"><div class="main"><div class="t">' + esc(a.cliente) + ' · ' + esc(a.numero) + '</div><div class="d">' + fdate(a.fecha) + ' · ' + t.units + ' prod.' + (est === 'APARTADO' ? (listos ? ' · <b style="color:var(--ok)">listo para entregar</b>' : ' · esperando mercancía') : '') + '</div></div><div class="end"><div class="big">' + money(t.total) + '</div>' + pill(est) + '</div></button>'; }).join('') + '</div>';
   },
   pedidos() { return vPedidos('encamino'); },
@@ -809,7 +816,7 @@ const SUBS = {
     h += '<div class="chips"><button class="chip" data-act="catCam" data-v="0" aria-pressed="' + (!S.catEnCamino) + '">Solo en existencia</button><button class="chip" data-act="catCam" data-v="1" aria-pressed="' + S.catEnCamino + '">Incluir lo que llega pronto</button>' + (cfg().tasa ? '<button class="chip" data-act="catBs" aria-pressed="' + S.catBs + '">Precios también en Bs</button>' : '') + '</div>';
     h += '<div class="btns full" style="margin-bottom:14px"><button class="btn pri" data-act="catCopy">Copiar texto</button><a class="btn" target="_blank" rel="noopener" href="' + esc(waLink('', catText())) + '">Enviar por WhatsApp</a><button class="btn" data-act="catImg">Compartir imagen</button></div>';
     if (!groups.length) return h + '<div class="card empty"><b>Nada disponible</b>Cuando tengas stock libre aparecerá aquí.</div>';
-    for (const g of groups) h += '<div class="cat-group"><div class="cat-h"><span>' + esc(g.tipo) + ' · ' + esc(title(g.pres)) + '</span><span class="pr">' + money(g.precio) + (S.catBs && cfg().tasa ? ' · ' + enBs(g.precio) : '') + '</span></div><div class="cat-grid">' + g.items.map(e => '<div class="cat-it">' + swatch(e.p) + '<div style="min-width:0"><div class="n">' + esc(title(e.p.color)) + '</div><div class="s">' + (e.disp - e.apartadoDeStock > 0 ? 'Disponible' : 'Llega pronto') + '</div></div></div>').join('') + '</div></div>';
+    for (const g of groups) h += '<div class="cat-group"><div class="cat-h"><span>' + esc(g.tipo) + ' · ' + esc(title(g.pres)) + '</span><span class="pr">' + money(g.precio) + (S.catBs && cfg().tasa ? ' · ' + enBs(g.precio) : '') + '</span></div><div class="cat-grid">' + g.items.map(e => '<div class="cat-it">' + swatch(e.p) + '<div style="min-width:0"><div class="n">' + esc(title(e.p.color)) + '</div><div class="s">' + (e.disp > 0 ? 'Disponible' : 'Llega pronto') + '</div></div></div>').join('') + '</div></div>';
     return h;
   },
   ajustes() {
@@ -852,10 +859,9 @@ function catGroups() {
   const by = {};
   for (const k in C.P) {
     const e = C.P[k]; if (e.p.missing || e.p.oculto) continue;
-    const stockLibre = e.disp - Math.max(0, e.apartado - e.enCamino);
-    const show = S.catEnCamino ? e.libre > 0 : stockLibre > 0;
+    const show = S.catEnCamino ? e.libre > 0 : e.disp > 0;
     if (!show) continue;
-    e.apartadoDeStock = Math.max(0, e.apartado - e.enCamino);
+    e.apartadoDeStock = 0;
     const key = e.p.tipo + '|' + e.p.presentacion + '|' + e.precio;
     (by[key] = by[key] || { tipo: e.p.tipo, pres: e.p.presentacion, precio: e.precio, items: [] }).items.push(e);
   }
@@ -865,7 +871,7 @@ function catGroups() {
 function catText() {
   const n = cfg().negocio, gs = catGroups();
   let t = '*' + n.nombre.toUpperCase() + '* · Filamento original Bambu Lab\n' + (n.ciudad ? n.ciudad + ' · ' : '') + 'Precios en USD\n';
-  for (const g of gs) { t += '\n*' + g.tipo + ' · ' + title(g.pres) + ' — ' + money(g.precio) + (S.catBs && cfg().tasa ? ' (' + enBs(g.precio) + ')' : '') + '*\n'; t += g.items.map(e => '• ' + title(e.p.color) + (e.disp - e.apartadoDeStock > 0 ? '' : ' _(llega pronto)_')).join('\n') + '\n'; }
+  for (const g of gs) { t += '\n*' + g.tipo + ' · ' + title(g.pres) + ' — ' + money(g.precio) + (S.catBs && cfg().tasa ? ' (' + enBs(g.precio) + ')' : '') + '*\n'; t += g.items.map(e => '• ' + title(e.p.color) + (e.disp > 0 ? '' : ' _(llega pronto)_')).join('\n') + '\n'; }
   if (S.catBs && cfg().tasa) t += '\nPrecios en Bs a la tasa del ' + fdate(cfg().tasaFecha || today()) + ' (' + tasaFmt(cfg().tasa) + ').';
   t += '\nPagos: ' + cfg().metodos.map(m => title(m.n)).join(', ') + '.';
   if (n.whatsapp) t += '\nPedidos: ' + n.whatsapp; if (n.instagram) t += '\nInstagram: ' + n.instagram;
@@ -995,7 +1001,7 @@ function negocioDatos() {
   return {
     hoy: today(), tasa_bs_por_dolar: cfg().tasa || null, tasa_fecha: cfg().tasaFecha || null,
     parametros: { tax: cfg().tax, stock_minimo: cfg().stockMin, meses_cobertura: cfg().mesesCobertura },
-    productos: Object.values(C.P).filter(e => !e.p.missing).map(e => ({ codigo: e.p.codigo, producto: e.p.tipo + ' ' + title(e.p.color) + ' (' + title(e.p.presentacion) + ')', precio: e.precio, costo_total_unidad: e.totalProm === null ? null : r2(e.totalProm), margen: e.margen === null ? null : r2(e.margen * 100), disponible: e.disp, en_camino: e.enCamino, apartado: e.apartado, libre_para_vender: e.libre, vendidas_total: e.vendidas, vendidas_90_dias: e.vend90, ultima_venta: lastSale[e.p.codigo] || null, estado: e.estado, sugerido_pedir: e.sugerido })),
+    productos: Object.values(C.P).filter(e => !e.p.missing).map(e => ({ codigo: e.p.codigo, producto: e.p.tipo + ' ' + title(e.p.color) + ' (' + title(e.p.presentacion) + ')', precio: e.precio, costo_total_unidad: e.totalProm === null ? null : r2(e.totalProm), margen: e.margen === null ? null : r2(e.margen * 100), disponible: e.disp, en_mano_fisico: e.enMano, apartado_de_existencia: e.apStock, en_camino: e.enCamino, apartado: e.apartado, libre_para_vender: e.libre, vendidas_total: e.vendidas, vendidas_90_dias: e.vend90, ultima_venta: lastSale[e.p.codigo] || null, estado: e.estado, sugerido_pedir: e.sugerido })),
     ventas: S.ventas.map(v => { const t = vt(v); return { n: v.numero, fecha: v.fecha, cliente: v.cliente, vendedor: v.vendedor || null, metodo: v.metodo || null, items: v.items.map(i => [i.codigo, i.cantidad, i.precio, i.descuento]), total: r2(t.total), costo: r2(t.costo), utilidad: r2(t.util), pagado: r2(t.pagado), saldo: t.saldo }; }),
     apartados: S.apartados.map(a => { const t = apTotals(a); return { n: a.numero, fecha: a.fecha, cliente: a.cliente, estado: a.estado, items: a.items.map(i => [i.codigo, i.cantidad, i.precio, i.descuento]), total: r2(t.total), abonado: r2(t.pagado) }; }),
     pagos_recibidos: S.pagos.map(p => ({ fecha: p.fecha, tipo: p.tipo, n: p.numero, cliente: p.cliente, monto: p.monto, metodo: p.metodo, tasa: p.tasa || null })),
@@ -1227,7 +1233,7 @@ function prodDetail(code) {
   const st = (l, v) => '<div class="stat"><div class="l">' + l + '</div><div class="v">' + v + '</div></div>';
   const ventas = S.ventas.filter(v => (v.items || []).some(i => i.codigo === code)).sort((a, b) => b.fecha.localeCompare(a.fecha)).slice(0, 6);
   let b = '<div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">' + swatch(p).replace('class="sw', 'style="width:52px;height:52px;background:' + esc(hexOf(p)) + '" class="sw') + '<div><div style="font-weight:700;font-size:17px">' + esc(title(p.color)) + '</div><div class="muted small"><span class="mono">' + esc(p.codigo) + '</span> · ' + esc(p.tipo) + ' · ' + esc(title(p.presentacion)) + '</div></div><div style="margin-left:auto">' + pill(e.estado) + '</div></div>';
-  b += '<div class="card grid3">' + st('Disponible', e.disp) + st('En camino', e.enCamino) + st('Apartado', e.apartado) + st('Compradas', e.compradas) + st('Vendidas', e.vendidas) + st('Libre p/ vender', e.libre) + '</div>';
+  b += '<div class="card grid3">' + st('Disponible', e.disp) + st('Apartado', e.apartado) + st('En mano', e.enMano) + st('En camino', e.enCamino) + st('Vendidas', e.vendidas) + st('Libre con lo que llega', e.libre) + '</div>';
   b += '<h2 class="sec">Costo promedio por unidad</h2><div class="card grid2">' + st('Costo', e.costoProm === null ? '—' : money(e.costoProm)) + st('Tax', e.taxProm === null ? '—' : money(e.taxProm)) + st('Envío', e.envProm === null ? '—' : money(e.envProm)) + st('Costo total', e.totalProm === null ? '—' : money(e.totalProm)) + '</div>';
   b += '<h2 class="sec">Precio y ganancia</h2><div class="card grid2">' + st('Precio', money(e.precio) + (cfg().tasa ? '<div class="muted small">' + enBs(e.precio) + '</div>' : '')) + st('Utilidad', e.util === null ? '—' : money(e.util)) + st('Markup', pct(e.markup)) + st('Margen', pct(e.margen)) + st('Valor en inventario', money(e.valor)) + st('Medidas (in)', num(p.largo) ? p.largo + '×' + p.ancho + '×' + p.alto : '—') + '</div>';
   if (e.totalProm === null) b += '<p class="muted small">El costo aparece cuando registres la primera compra recibida de este producto.</p>';
@@ -1281,11 +1287,11 @@ function ventaForm(mode, doc) {
     + '<div class="sumbox" id="sumbox"></div><div class="err" id="formErr"></div><button class="btn pri" type="submit">' + (doc ? 'Guardar cambios' : (isV ? 'Registrar venta' : 'Registrar apartado')) + '</button></form>', () => { updateLines(); });
 }
 function pickerHtml(mode) {
-  const list = S.productos.map(p => C.P[p.codigo]).filter(e => e && (mode === 'venta' ? e.disp > 0 : (e.disp + e.enCamino - e.apartado > 0)))
+  const list = S.productos.map(p => C.P[p.codigo]).filter(e => e && (mode === 'venta' ? e.disp > 0 : e.libre > 0))
     .sort((a, b) => b.vendidas - a.vendidas || a.p.color.localeCompare(b.p.color));
   if (!list.length) return '';
   return '<div class="f"><span>Venta rápida: toca un producto para agregarlo</span><input class="search" id="pk_q" type="search" placeholder="Buscar color o código" style="margin:0" autocomplete="off"><div class="pick-grid" id="pkGrid">'
-    + list.map(e => '<button type="button" class="pick" data-act="pick" data-m="' + mode + '" data-c="' + esc(e.p.codigo) + '" data-s="' + esc((e.p.codigo + ' ' + e.p.color + ' ' + e.p.tipo + ' ' + e.p.presentacion).toLowerCase()) + '">' + swatch(e.p) + '<span class="pk-t"><b>' + esc(title(e.p.color)) + '</b><small>' + esc(e.p.tipo.replace('PLA ', '') + ' · ' + (e.p.presentacion === 'CON SPOOL' ? 'Spool' : title(e.p.presentacion))) + ' · ' + (mode === 'venta' ? e.disp : e.disp + e.enCamino - e.apartado) + '</small></span><span class="pk-n" data-n></span></button>').join('')
+    + list.map(e => '<button type="button" class="pick" data-act="pick" data-m="' + mode + '" data-c="' + esc(e.p.codigo) + '" data-s="' + esc((e.p.codigo + ' ' + e.p.color + ' ' + e.p.tipo + ' ' + e.p.presentacion).toLowerCase()) + '">' + swatch(e.p) + '<span class="pk-t"><b>' + esc(title(e.p.color)) + '</b><small>' + esc(e.p.tipo.replace('PLA ', '') + ' · ' + (e.p.presentacion === 'CON SPOOL' ? 'Spool' : title(e.p.presentacion))) + ' · ' + (mode === 'venta' ? e.disp : e.libre) + '</small></span><span class="pk-n" data-n></span></button>').join('')
     + '</div></div>';
 }
 function pickAdd(code, mode) {
@@ -1325,8 +1331,8 @@ function updateLines() {
       need[o.codigo] = (need[o.codigo] || 0) + o.cantidad;
       let own = 0; if (editId && mode === 'venta') { const d = S.ventas.find(x => x.id === editId); if (d) own = (d.items || []).filter(i => i.codigo === o.codigo).reduce((s, i) => s + num(i.cantidad), 0); }
       const avail = e.disp + own;
-      if (mode === 'venta' && need[o.codigo] > avail) { info.className = 'l-info warn'; info.textContent = 'Solo hay ' + avail + ' disponible' + (avail === 1 ? '' : 's') + (e.enCamino ? ' (' + e.enCamino + ' en camino; regístralo como apartado)' : ''); }
-      else info.textContent = 'Disponible ' + e.disp + ' · libre ' + e.libre + (e.totalProm !== null ? ' · costo ' + money(e.totalProm) : '');
+      if (mode === 'venta' && need[o.codigo] > avail) { info.className = 'l-info warn'; info.textContent = 'Solo hay ' + Math.max(0, avail) + ' disponible' + (avail === 1 ? '' : 's') + (e.apStock ? '. ' + e.apStock + ' en existencia está' + (e.apStock === 1 ? '' : 'n') + ' apartado' + (e.apStock === 1 ? '' : 's') + ' (' + apQuien(o.codigo) + ')' : '') + (e.enCamino ? '. Viene' + (e.enCamino === 1 ? '' : 'n') + ' ' + e.enCamino + ' en camino; regístralo como apartado' : ''); }
+      else info.textContent = 'Disponible ' + e.disp + (e.apStock ? ' · ' + e.apStock + ' apartado' + (e.apStock === 1 ? '' : 's') : '') + ' · libre ' + e.libre + (e.totalProm !== null ? ' · costo ' + money(e.totalProm) : '');
     } else {
       sub += o.subtotal;
       const p = e.p; info.textContent = o.cantidad && o.subtotal ? 'Costo unitario ' + money(o.subtotal / o.cantidad) + ' + tax' : '';
@@ -1372,9 +1378,9 @@ function pagosList(list, pagado) {
 function apartadoDetail(id) {
   const a = S.apartados.find(x => x.id === id); if (!a) return closeSheet();
   const t = apTotals(a), est = a.estado || 'APARTADO', cl = clienteDe(a.cliente);
-  const faltan = (a.items || []).filter(it => ((C.P[it.codigo] || {}).disp || 0) < num(it.cantidad));
+  const faltan = (a.items || []).filter(it => ((C.P[it.codigo] || {}).enMano || 0) < num(it.cantidad));
   let b = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div style="font-weight:700;font-size:17px">' + esc(a.cliente) + '</div><div class="muted small">' + fdate(a.fecha) + '</div></div>' + pill(est) + '</div>';
-  b += '<div class="card items" style="margin-top:12px">' + (a.items || []).map(it => { const p = prod(it.codigo) || { color: it.codigo }, e = C.P[it.codigo] || {}; const ok = (e.disp || 0) >= num(it.cantidad); return '<div class="it">' + swatch(p) + '<div class="main"><div style="font-weight:600">' + esc(title(p.color)) + '</div><div class="muted small">' + esc((p.tipo || '') + ' · ' + title(p.presentacion || '')) + ' · ' + num(it.cantidad) + ' × ' + money(num(it.precio)) + (num(it.descuento) ? ' − ' + money(num(it.descuento)) : '') + (est === 'APARTADO' ? ' · ' + (ok ? '<b style="color:var(--ok)">en existencia</b>' : 'por llegar') : '') + '</div></div><div class="num">' + money(num(it.cantidad) * num(it.precio) - num(it.descuento)) + '</div></div>'; }).join('') + '</div>';
+  b += '<div class="card items" style="margin-top:12px">' + (a.items || []).map(it => { const p = prod(it.codigo) || { color: it.codigo }, e = C.P[it.codigo] || {}; const ok = (e.enMano || 0) >= num(it.cantidad); return '<div class="it">' + swatch(p) + '<div class="main"><div style="font-weight:600">' + esc(title(p.color)) + '</div><div class="muted small">' + esc((p.tipo || '') + ' · ' + title(p.presentacion || '')) + ' · ' + num(it.cantidad) + ' × ' + money(num(it.precio)) + (num(it.descuento) ? ' − ' + money(num(it.descuento)) : '') + (est === 'APARTADO' ? ' · ' + (ok ? '<b style="color:var(--ok)">en existencia</b>' : 'por llegar') : '') + '</div></div><div class="num">' + money(num(it.cantidad) * num(it.precio) - num(it.descuento)) + '</div></div>'; }).join('') + '</div>';
   b += '<div class="sumbox" style="margin-top:10px"><div class="tt"><span>Total</span><span class="num">' + money(t.total) + '</span></div><div><span>Abonado</span><span class="num">' + money(t.pagado) + '</span></div><div style="font-weight:700"><span>Resta</span><span class="num">' + money(t.saldo) + '</span></div></div>';
   b += pagosList(pagosDe('APARTADO', a.numero), t.pagado);
   if (a.notas) b += '<p class="small"><b>Notas:</b> ' + esc(a.notas) + '</p>';
@@ -1541,7 +1547,7 @@ function drawCatalogo(cv) {
       if (isAcc(e.p)) { x.fillStyle = BR.raised; x.fillRect(cx, cy + 14, 56, 56); }
       else { x.fillStyle = hexOf(e.p); x.beginPath(); x.arc(cx + 28, cy + 42, 28, 0, Math.PI * 2); x.fill(); x.strokeStyle = 'rgba(241,246,240,.25)'; x.lineWidth = 2; x.stroke(); }
       x.fillStyle = BR.hueso; x.font = '600 29px ' + FD; x.fillText(title(e.p.color).slice(0, 24), cx + 76, cy + 42);
-      const ok = e.disp - e.apartadoDeStock > 0;
+      const ok = e.disp > 0;
       x.fillStyle = ok ? BR.verde : BR.naranja; x.font = '600 21px ' + FB; x.fillText(ok ? 'Disponible' : 'Llega pronto', cx + 76, cy + 72);
     });
     y += Math.ceil(g.items.length / cols) * rowH + 14;
@@ -1681,7 +1687,7 @@ async function ensureCliente(nombre, tel) {
 }
 async function entregar(id) {
   const a = S.apartados.find(x => x.id === id); if (!a) return;
-  const falt = (a.items || []).filter(it => ((C.P[it.codigo] || {}).disp || 0) < num(it.cantidad));
+  const falt = (a.items || []).filter(it => ((C.P[it.codigo] || {}).enMano || 0) < num(it.cantidad));
   if (falt.length) { toast('Aún falta mercancía por llegar.'); return; }
   let numero;
   const ok = await W(async () => {
@@ -1777,7 +1783,7 @@ document.addEventListener('submit', async ev => {
       const old = id ? S[k].find(x => x.id === id) : null;
       if (isV) {
         const need = {}; for (const o of items) need[o.codigo] = (need[o.codigo] || 0) + o.cantidad;
-        for (const c in need) { const own = old ? old.items.filter(i => i.codigo === c).reduce((s, i) => s + num(i.cantidad), 0) : 0; if (need[c] > (C.P[c] || {}).disp + own) return err('No hay suficiente ' + title(prod(c).color) + ' disponible. Si viene en camino, regístralo como apartado.'); }
+        for (const c in need) { const own = old ? old.items.filter(i => i.codigo === c).reduce((s, i) => s + num(i.cantidad), 0) : 0; const ec = C.P[c] || {}; if (need[c] > (ec.disp || 0) + own) return err('No hay suficiente ' + title(prod(c).color) + ' disponible.' + (ec.apStock ? ' Lo que hay está apartado para ' + apQuien(c) + '; si es para esa persona, entrégalo desde el apartado.' : ' Si viene en camino, regístralo como apartado.')); }
       }
       const nombre = fd.cliente.trim(), total = sumItems(items), pagoIni = num(fd.pagado);
       let notas = (fd.notas || '').trim();
