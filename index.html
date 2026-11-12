@@ -198,6 +198,17 @@ form.ask{display:flex;gap:8px;align-items:flex-end}
 form.ask textarea{flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);resize:none;min-height:46px}
 @media (max-width:380px){.kpi .v{font-size:18px}.line-nums{grid-template-columns:1fr 1fr 1fr auto}.fg3{grid-template-columns:1fr 1fr}}
 @media (prefers-reduced-motion:no-preference){.sheet-card{animation:up .22s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
+html{-webkit-tap-highlight-color:transparent}
+button,a,input,select,textarea,label,[data-act],#sheet{touch-action:manipulation}
+[data-act],#sheet{cursor:pointer}
+#sheetCard{cursor:auto}
+button,[data-act]{-webkit-user-select:none;user-select:none}
+.btn,.row,.chip,.tab,.pick,.alert,.back,.x{transition:transform .08s ease,opacity .08s ease,background-color .08s ease}
+.btn:active,.chip:active,.pick:active,.alert:active,.back:active,.x:active{transform:scale(.97);opacity:.8}
+.row:active{background:var(--surface-2)}
+.tab:active{opacity:.6}
+.is-busy{opacity:.55;pointer-events:none}
+button:disabled{opacity:.55}
 </style>
 </head>
 <body>
@@ -239,7 +250,7 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 
 const DEF = {
   tax: 0.07, tarifaPie: 34, stockMin: 3, mesesCobertura: 2,
-  metodos: [{n:'EFECTIVO USD',c:0},{n:'ZELLE',c:0},{n:'PAGO MÓVIL',c:0},{n:'TRANSFERENCIA BS',c:0},{n:'BINANCE / USDT',c:0}],
+  metodos: [{n:'EFECTIVO USD',c:0},{n:'ZELLE',c:0},{n:'PAGO MÓVIL',c:0},{n:'TRANSFERENCIA BS',c:0},{n:'BINANCE / USDT',c:0},{n:'ZINLI',c:0}],
   categorias: ['DELIVERY LOCAL','EMPAQUES','PUBLICIDAD','COMISIONES BANCARIAS','HERRAMIENTAS / EQUIPOS','SERVICIOS','OTROS'],
   proveedores: ['BAMBU LAB US'],
   tipos: ['PLA BASIC','PLA PURE','PLA SILK+','PLA MATTE','PETG BASIC','ABS','ACCESORIO'],
@@ -511,8 +522,8 @@ function errMsg(e, write) {
 async function W(fn, okMsg) {
   if (!API || !KEY) { toast('Falta conectar la app con tu hoja.'); return false; }
   return queue(async () => {
-    S.busy = true; renderSync();
-    try { await fn(); if (okMsg) toast(okMsg); try { await readAll(); } catch (e) {} return true; }
+    S.busy = true; renderSync(); toast('Guardando en la hoja…', 90000);
+    try { await fn(); if (okMsg) toast(okMsg); else $('#toast').hidden = true; try { await readAll(); } catch (e) {} renderWhenIdle(); return true; }
     catch (e) {
       console.error(e);
       if (e && e.stale) { render(); toast('La hoja cambió mientras tanto. Ya la recargué: revisa y vuelve a intentar.'); }
@@ -584,7 +595,7 @@ const pagosDe = (tipo, numero) => S.pagos.filter(p => p.tipo === tipo && String(
 const estadoPago = (total, pagado) => pagado >= total - 0.005 ? 'PAGADO' : pagado > 0 ? 'ABONADO' : 'PENDIENTE';
 const sumItems = items => items.reduce((s, it) => s + num(it.cantidad) * num(it.precio) - num(it.descuento), 0);
 let toastT = null;
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
+function toast(msg, ms) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, ms || 2600); }
 async function copyText(txt) {
   try { await navigator.clipboard.writeText(txt); toast('Copiado'); }
   catch (e) { openSheet('Copia el texto', '<textarea id="copyArea" style="width:100%;min-height:260px;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface)">' + esc(txt) + '</textarea><p class="muted small">Mantén presionado para seleccionar y copiar.</p>', () => { const a = $('#copyArea'); a.focus(); a.select(); }); }
@@ -602,10 +613,22 @@ const TABS = [['inicio','Inicio'],['inventario','Inventario'],['ventas','Ventas'
 function renderTabs() {
   $('#tabs').innerHTML = TABS.map(([k, l]) => '<button class="tab" data-act="tab" data-k="' + k + '"' + (S.tab === k ? ' aria-current="page"' : '') + '><span class="ic">' + ICONS[k] + '</span>' + l + '</button>').join('');
 }
-function go(tab, sub) { S.tab = tab; S.sub = sub || null; lsSet('sf_tab', tab); render(); window.scrollTo(0, 0); }
+function go(tab, sub) { uiAt = Date.now(); S.tab = tab; S.sub = sub || null; lsSet('sf_tab', tab); render(); window.scrollTo(0, 0); }
 
 /* ============ render ============ */
+let touching = false, touchAt = 0, uiAt = 0, rsT = null, drawnSig = '';
+document.addEventListener('pointerdown', () => { touching = true; touchAt = Date.now(); }, { passive: true, capture: true });
+document.addEventListener('pointerup', () => { touching = false; touchAt = Date.now(); }, { passive: true, capture: true });
+document.addEventListener('pointercancel', () => { touching = false; }, { passive: true, capture: true });
+const dataSig = () => { try { return JSON.stringify(S.raw) + '|' + (S.sheetErr || '') + '|' + S.loaded.size + '|' + today(); } catch (e) { return String(Date.now()); } };
+/* no redibujar la pantalla mientras el dedo está tocando: así el toque no se pierde */
+function renderWhenIdle() {
+  clearTimeout(rsT);
+  if (touching || Date.now() - touchAt < 700) { rsT = setTimeout(renderWhenIdle, 350); return; }
+  render();
+}
 function render() {
+  drawnSig = dataSig();
   C = calc();
   renderTabs();
   renderSync();
@@ -1220,7 +1243,7 @@ SUBS.pagos = function () {
 let sheetClose = null;
 function openSheet(t, body, mount) {
   $('#sheetCard').innerHTML = '<div class="sheet-h"><h3>' + esc(t) + '</h3><button class="x" data-act="closeSheet" aria-label="Cerrar">×</button></div>' + body;
-  $('#sheet').hidden = false; document.body.style.overflow = 'hidden';
+  $('#sheet').hidden = false; document.body.style.overflow = 'hidden'; uiAt = Date.now();
   if (mount) mount();
 }
 function closeSheet() { $('#sheet').hidden = true; $('#sheetCard').innerHTML = ''; document.body.style.overflow = ''; }
@@ -1560,9 +1583,25 @@ function drawCatalogo(cv) {
 
 /* ============ acciones ============ */
 const pending = {};
+/* toques: uno solo por botón, sin repetir acciones ni tocar lo que apareció debajo del dedo */
+const inflight = new Set(); let lastTap = { el: null, t: 0 };
 document.addEventListener('click', async ev => {
-  const b = ev.target.closest('[data-act]'); if (!b) { if (ev.target.id === 'sheet') closeSheet(); return; }
+  const now = Date.now();
+  const b = ev.target.closest('[data-act]'); if (!b) { if (ev.target.id === 'sheet' && now - uiAt > 450) closeSheet(); return; }
+  if (b.disabled || b.classList.contains('is-busy')) return;
   const a = b.dataset.act, id = b.dataset.id;
+  if (now - uiAt < 350 && a !== 'closeSheet') return;
+  if (lastTap.el === b && now - lastTap.t < (a === 'pick' ? 180 : 450)) return;
+  lastTap = { el: b, t: now };
+  const key = a + '|' + JSON.stringify(Object.assign({}, b.dataset));
+  if (inflight.has(key)) return;
+  inflight.add(key);
+  const slow = setTimeout(() => { if (b.isConnected) b.classList.add('is-busy'); }, 150);
+  try { await act(ev, b, a, id); }
+  catch (e) { console.error(e); toast('Algo falló. Intenta de nuevo.'); }
+  finally { clearTimeout(slow); inflight.delete(key); b.classList.remove('is-busy'); }
+});
+async function act(ev, b, a, id) {
   switch (a) {
     case 'tab': closeSheet(); go(b.dataset.k); break;
     case 'back': go('mas'); break;
@@ -1606,13 +1645,13 @@ document.addEventListener('click', async ev => {
     case 'payAll': { $('#v_pag').value = num($('#sumbox').dataset.total).toFixed(2); break; }
     case 'askDel': {
       const key = b.dataset.k + id;
-      if (pending[key]) { delete pending[key]; await doDelete(b.dataset.k, id); }
-      else { pending[key] = 1; b.textContent = 'Toca otra vez para confirmar'; setTimeout(() => { delete pending[key]; if (b.isConnected) b.textContent = 'Eliminar'; }, 4000); }
+      if (pending[key] && Date.now() - pending[key] < 600) break; if (pending[key]) { delete pending[key]; await doDelete(b.dataset.k, id); }
+      else { pending[key] = Date.now(); b.textContent = 'Toca otra vez para confirmar'; setTimeout(() => { delete pending[key]; if (b.isConnected) b.textContent = 'Eliminar'; }, 4000); }
       break; }
     case 'cancelAp': {
       const key = 'cancel' + id;
-      if (pending[key]) { delete pending[key]; const a = S.apartados.find(x => x.id === id); if (a && await W(() => setApEstado(a, 'CANCELADO', 'Cancelado el ' + fdate(today())), 'Apartado cancelado')) closeSheet(); }
-      else { pending[key] = 1; b.textContent = 'Toca otra vez para cancelar'; setTimeout(() => { delete pending[key]; if (b.isConnected) b.textContent = 'Cancelar apartado'; }, 4000); }
+      if (pending[key] && Date.now() - pending[key] < 600) break; if (pending[key]) { delete pending[key]; const a = S.apartados.find(x => x.id === id); if (a && await W(() => setApEstado(a, 'CANCELADO', 'Cancelado el ' + fdate(today())), 'Apartado cancelado')) closeSheet(); }
+      else { pending[key] = Date.now(); b.textContent = 'Toca otra vez para cancelar'; setTimeout(() => { delete pending[key]; if (b.isConnected) b.textContent = 'Cancelar apartado'; }, 4000); }
       break; }
     case 'entregar': await entregar(id); break;
     case 'recibo': reciboShow(b.dataset.k, id); break;
@@ -1645,9 +1684,9 @@ document.addEventListener('click', async ev => {
     case 'install': { if (installEvt) { installEvt.prompt(); try { await installEvt.userChoice; } catch (e) {} installEvt = null; render(); } break; }
     case 'reload': { S.sheetErr = null; render(); sync(); break; }
     case 'copyAccess': copyText(location.origin + location.pathname + '?api=' + encodeURIComponent(API) + '&k=' + encodeURIComponent(KEY)); break;
-    case 'logout': { const key = 'logout'; if (pending[key]) { delete pending[key]; lsSet(LS_API, ''); lsSet(LS_KEY, ''); API = ''; KEY = ''; S.loaded.clear(); go('inicio'); } else { pending[key] = 1; b.textContent = 'Toca otra vez para desconectar'; setTimeout(() => { delete pending[key]; if (b.isConnected) b.textContent = 'Desconectar este teléfono'; }, 4000); } break; }
+    case 'logout': { const key = 'logout'; if (pending[key] && Date.now() - pending[key] < 600) break; if (pending[key]) { delete pending[key]; lsSet(LS_API, ''); lsSet(LS_KEY, ''); API = ''; KEY = ''; S.loaded.clear(); go('inicio'); } else { pending[key] = Date.now(); b.textContent = 'Toca otra vez para desconectar'; setTimeout(() => { delete pending[key]; if (b.isConnected) b.textContent = 'Desconectar este teléfono'; }, 4000); } break; }
   }
-});
+}
 document.addEventListener('input', ev => {
   const t = ev.target;
   if (t.dataset && t.dataset.in) { S[t.dataset.in] = t.value; const pos = t.selectionStart; render(); const n = document.getElementById(t.id); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} } return; }
@@ -1733,6 +1772,15 @@ async function addToList(colIdx, value) {
 document.addEventListener('submit', async ev => {
   const f = ev.target; if (!f.dataset || !f.dataset.form) return;
   ev.preventDefault();
+  if (f.dataset.saving) return;
+  f.dataset.saving = '1';
+  const sb = f.querySelector('button[type=submit]'), lbl = sb ? sb.innerHTML : '';
+  const lt = setTimeout(() => { if (sb && sb.isConnected && f.dataset.saving && f.dataset.form !== 'ask') sb.innerHTML = 'Guardando…'; }, 250);
+  try { await onSubmit(ev, f); }
+  catch (e) { console.error(e); toast('Algo falló. Intenta de nuevo.'); }
+  finally { clearTimeout(lt); delete f.dataset.saving; if (sb && sb.isConnected) sb.innerHTML = lbl; }
+});
+async function onSubmit(ev, f) {
   const fd = Object.fromEntries(new FormData(f).entries()), err = m => { const e = f.querySelector('#formErr'); if (e) e.textContent = m; };
   const kind = f.dataset.form, id = f.dataset.id, btn = f.querySelector('button[type=submit]');
   if (kind === 'ask') { ask(fd.q); return; }
@@ -1889,7 +1937,7 @@ document.addEventListener('submit', async ev => {
       if (!ok) err('No se pudieron guardar todos los ajustes.');
     }
   } finally { btn && (btn.disabled = false); }
-});
+}
 
 /* ============ arranque ============ */
 (function () {
@@ -1904,7 +1952,7 @@ async function sync() {
   syncing = true;
   try { await readAll(); }
   catch (e) { S.sheetErr = errMsg(e, false); if (e.code === 'clave') { lsSet(LS_KEY, ''); KEY = ''; } }
-  finally { syncing = false; render(); }
+  finally { syncing = false; if (dataSig() !== drawnSig) renderWhenIdle(); else renderSync(); }
 }
 render();
 sync();
