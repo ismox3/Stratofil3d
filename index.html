@@ -763,7 +763,7 @@ function vCobrar() {
   else h += '<div class="list">' + cob.map(x => {
     const d = daysSince(x.oldest), cl = clienteDe(x.cliente);
     return '<div class="row" style="cursor:default;flex-wrap:wrap"><div class="main"><div class="t">' + esc(x.cliente) + '</div><div class="d">' + x.ventas.length + ' venta' + (x.ventas.length === 1 ? '' : 's') + ' · desde ' + fdate(x.oldest) + ' · <b style="color:' + (d > 15 ? 'var(--bad)' : d > 7 ? 'var(--warn)' : 'var(--muted)') + '">' + d + ' día' + (d === 1 ? '' : 's') + '</b>' + (cl && cl.telefono ? '' : ' · sin teléfono') + '</div></div><div class="end"><div class="big">' + money(x.total) + '</div></div>'
-      + '<div class="btns" style="width:100%"><a class="btn sm pri" target="_blank" rel="noopener" href="' + esc(waLink(cl && cl.telefono, msgCobro(x))) + '">WhatsApp</a><button class="btn sm" data-act="copyCobro" data-cl="' + esc(x.cliente) + '">Copiar mensaje</button><button class="btn sm" data-act="ecuenta" data-cl="' + esc(x.cliente) + '">Estado de cuenta</button>' + (can() ? '<button class="btn sm ghost" data-act="pago" data-id="' + esc(x.ventas[0].v.id) + '">Registrar pago</button>' : '') + '</div></div>';
+      + '<div class="btns" style="width:100%"><a class="btn sm pri" target="_blank" rel="noopener" href="' + esc(waLink(cl && cl.telefono, msgCobro(x))) + '">WhatsApp</a><button class="btn sm" data-act="copyCobro" data-cl="' + esc(x.cliente) + '">Copiar mensaje</button><button class="btn sm" data-act="ecuenta" data-cl="' + esc(x.cliente) + '">Estado de cuenta</button>' + (can() ? '<button class="btn sm ghost" data-act="pagoCli" data-cl="' + esc(x.cliente) + '">Registrar pago</button>' : '') + '</div></div>';
   }).join('') + '</div>';
   h += '<h2 class="sec">Detalle por venta</h2>';
   h += cob.length ? '<div class="list">' + cob.flatMap(x => x.ventas).sort((a, b) => a.v.fecha.localeCompare(b.v.fecha)).map(({ v, t }) => '<button class="row" data-act="venta" data-id="' + esc(v.id) + '"><div class="main"><div class="t">' + esc(v.cliente) + ' · N° ' + esc(v.numero) + '</div><div class="d">' + fdate(v.fecha) + ' · total ' + money(t.total) + ' · pagó ' + money(t.pagado) + '</div></div><div class="end"><div class="big">' + money(t.saldo) + '</div>' + pill(t.estado) + '</div></button>').join('') + '</div>' : '';
@@ -1164,7 +1164,9 @@ function drawEcuenta(cv, ec) {
   x.fillText('FECHA', cX[0], y); x.fillText('CONCEPTO', cX[1], y); x.textAlign = 'right'; x.fillText('CARGO', cX[2], y); x.fillText('ABONO', cX[3], y); x.fillText('SALDO', cX[4], y); x.textAlign = 'left';
   y += 18; x.fillStyle = BR.line; x.fillRect(70, y, W - 140, 3); y += 12;
   if (!ec.movs.length) { y += 46; x.fillStyle = BR.muted; x.font = '500 24px ' + FB; x.fillText('Sin compras registradas.', 70, y); y += rowH - 46; }
+  const cuts = cv._cuts = [];
   ec.movs.forEach((m, i) => {
+    cuts.push(y);
     if (i % 2) { x.fillStyle = 'rgba(5,16,34,.035)'; x.fillRect(70, y, W - 140, rowH); }
     const ty = y + 46;
     x.fillStyle = BR.muted; x.font = '500 22px ' + FD; x.fillText(fdate(m.fecha).slice(0, 5), cX[0], ty);
@@ -1178,11 +1180,13 @@ function drawEcuenta(cv, ec) {
     y += rowH;
   });
   y += 6; x.fillStyle = BR.line; x.fillRect(70, y, W - 140, 3); y += 40;
+  cuts.push(y - 20);
   // saldo final
   x.fillStyle = BR.noche; x.fillRect(70, y, W - 140, 84);
   x.fillStyle = BR.hueso; x.font = '700 30px ' + FD; x.fillText(ec.debe > 0.005 ? 'Saldo pendiente' : 'Estás al día', 100, y + 54);
   x.fillStyle = BR.verde; x.font = '700 42px ' + FD; x.textAlign = 'right'; x.fillText(money(ec.debe), W - 100, y + 56); x.textAlign = 'left';
   y += 124;
+  cuts.push(y - 40); cuts.push(H - 130);
   if (ec.aps.length) {
     x.fillStyle = BR.noche; x.font = '700 26px ' + FD; x.fillText('Apartados activos', 70, y);
     x.fillStyle = BR.muted; x.font = '500 20px ' + FB; x.fillText('No suman al saldo hasta que se entregan.', 70, y + 30);
@@ -1244,6 +1248,147 @@ SUBS.pagos = function () {
   }
   return h;
 };
+
+/* ============ mejoras: anular pago, pago repartido, entrega parcial, PDF carta ============ */
+function ventaDeApartado(numero) { return S.ventas.find(v => new RegExp('Entrega del apartado ' + String(numero).replace(/[^\w-]/g, '') + '(?![\\w-])', 'i').test(String(v.notas || ''))); }
+async function setPagado(k, d, pagado, nota, metodo) {
+  await verify(k, d.sigs);
+  const first = d.rows[0], mm = {};
+  if (k === 'ventas') {
+    const t = vt(d), arr = new Array(23).fill(null);
+    arr[19] = estadoPago(t.total, pagado); arr[20] = r2(pagado); if (nota) arr[22] = txt((d.notas ? d.notas + '. ' : '') + nota);
+    if (!d.metodo && metodo) arr[11] = metodo;
+    mm[first] = arr;
+    if (!d.metodo && metodo) for (const r of d.rows.slice(1)) { const a2 = new Array(12).fill(null); a2[11] = metodo; mm[r] = a2; }
+  } else {
+    const arr = new Array(14).fill(null); arr[11] = pagado > 0.005 ? r2(pagado) : ''; if (nota) arr[13] = txt((d.notas ? d.notas + '. ' : '') + nota);
+    mm[first] = arr;
+    for (const r of d.rows.slice(1)) { const a2 = new Array(12).fill(null); a2[11] = ''; mm[r] = a2; }
+  }
+  await writeRows(k, mm);
+}
+async function anularPago(pid) {
+  const p = S.pagos.find(x => x.id === pid); if (!p) return;
+  const nota = 'Se anuló el pago de ' + money(p.monto) + ' del ' + fdate(p.fecha);
+  const ok = await W(async () => {
+    await verify('pagos', { [p.row]: p.sig });
+    await fresh('ventas'); await fresh('apartados');
+    if (p.tipo === 'VENTA') {
+      const v = S.ventas.find(x => String(x.numero) === String(p.numero));
+      if (v) await setPagado('ventas', v, Math.max(0, r2(vt(v).pagado - p.monto)), nota);
+    } else {
+      const a = S.apartados.find(x => String(x.numero) === String(p.numero));
+      if (a) {
+        await setPagado('apartados', a, Math.max(0, r2((a.abonoSum || 0) - p.monto)), nota);
+        if ((a.estado || 'APARTADO') === 'ENTREGADO') { const v = ventaDeApartado(a.numero); if (v) await setPagado('ventas', v, Math.max(0, r2(vt(v).pagado - p.monto)), nota); }
+      }
+    }
+    await writeRows('pagos', { [p.row]: BLANK.pagos() });
+  }, 'Pago anulado');
+  if (ok) closeSheet();
+}
+function deudaCliente(nombre) {
+  const byF = (a, b) => String(a.d.fecha).localeCompare(String(b.d.fecha));
+  const vs = S.ventas.filter(v => sameName(v.cliente, nombre)).map(v => ({ k: 'ventas', d: v, saldo: vt(v).saldo, lbl: 'Venta N° ' + v.numero })).filter(x => x.saldo > 0.005).sort(byF);
+  const as = S.apartados.filter(a => sameName(a.cliente, nombre) && (a.estado || 'APARTADO') === 'APARTADO').map(a => ({ k: 'apartados', d: a, saldo: apTotals(a).saldo, lbl: 'Apartado ' + a.numero })).filter(x => x.saldo > 0.005).sort(byF);
+  return vs.concat(as);
+}
+function repartir(nombre, monto) {
+  let r = r2(monto); const partes = [];
+  for (const x of deudaCliente(nombre)) { if (r <= 0.005) break; const m = r2(Math.min(r, x.saldo)); partes.push(Object.assign({ m }, x)); r = r2(r - m); }
+  return { partes, sobra: r };
+}
+function pagoCliForm(nombre) {
+  if (!can()) return;
+  const deuda = deudaCliente(nombre);
+  if (!deuda.length) { toast('Este cliente no debe nada.'); return; }
+  if (deuda.length === 1) return pagoForm(deuda[0].k, deuda[0].d.id);
+  const tv = r2(deuda.filter(x => x.k === 'ventas').reduce((s, x) => s + x.saldo, 0)), ta = r2(deuda.filter(x => x.k === 'apartados').reduce((s, x) => s + x.saldo, 0));
+  openSheet('Pago · ' + nombre, '<form class="fg" data-form="pagoCli" data-cl="' + esc(nombre) + '"><p class="muted small" style="margin:0">' + (tv ? 'Debe ' + money(tv) + ' en ventas' : 'No debe ventas') + (ta ? ' y le restan ' + money(ta) + ' en apartados' : '') + '. Escribe lo que pagó y la app lo reparte: primero la venta más vieja y lo que sobre va a sus apartados.</p>'
+    + '<div class="fg2"><div class="f"><label class="lb" for="pc_m">Monto ($)</label><input id="pc_m" name="monto" inputmode="decimal" required value="' + (tv || ta).toFixed(2) + '"></div><div class="f"><label class="lb" for="pc_f">Fecha</label><input id="pc_f" type="date" name="fecha" value="' + today() + '"></div></div>'
+    + '<div class="f"><label class="lb" for="pc_me">Método</label><select id="pc_me" name="metodo"><option value="">—</option>' + cfg().metodos.map(m => '<option>' + esc(m.n) + '</option>').join('') + '</select></div>'
+    + '<div class="f"><label class="lb" for="pc_t">Tasa Bs/$ (si pagó en bolívares)</label><input id="pc_t" name="tasa" inputmode="decimal" value="' + (cfg().tasa ? tasaFmt(cfg().tasa).replace(/\./g, '') : '') + '"></div>'
+    + '<div class="card" id="pcPrev" style="padding:12px 14px;font-size:14px"></div><div class="err" id="formErr"></div><button class="btn pri" type="submit">Guardar</button></form>', () => pcPrev());
+}
+function pcPrev() {
+  const f = document.querySelector('#sheetCard form[data-form="pagoCli"]'), o = $('#pcPrev'); if (!f || !o) return;
+  const m = num($('#pc_m').value), r = repartir(f.dataset.cl, m);
+  o.innerHTML = !(m > 0) ? '<span class="muted">Escribe el monto para ver cómo se reparte.</span>' : '<div class="muted small" style="margin-bottom:6px">Así se reparte</div>' + r.partes.map(p => '<div style="display:flex;justify-content:space-between;gap:10px;padding:3px 0"><span>' + esc(p.lbl) + ' <span class="muted small">· ' + (p.m >= p.saldo - 0.005 ? 'queda al día' : 'queda debiendo ' + money(p.saldo - p.m)) + '</span></span><b>' + money(p.m) + '</b></div>').join('') + (r.sobra > 0.005 ? '<div class="err" style="margin-top:6px">Sobran ' + money(r.sobra) + ': es más de lo que debe.</div>' : '');
+}
+document.addEventListener('input', ev => { if (ev.target && ev.target.id === 'pc_m') pcPrev(); });
+function apListos(a) {
+  const have = {}, listos = [], resto = [];
+  for (const it of a.items || []) { const e = C.P[it.codigo] || {}, q = num(it.cantidad), libre = (e.enMano || 0) - (have[it.codigo] || 0); if (libre >= q) { listos.push(it); have[it.codigo] = (have[it.codigo] || 0) + q; } else resto.push(it); }
+  return { listos, resto };
+}
+async function entregarParcial(id) {
+  const a = S.apartados.find(x => x.id === id); if (!a) return;
+  const { listos, resto } = apListos(a);
+  if (!listos.length || !resto.length) { toast('No hay nada que entregar por partes.'); return; }
+  const ok = await W(async () => {
+    await verify('apartados', a.sigs); await fresh('ventas'); await fresh('pagos');
+    const numero = nextVenta(), total = sumItems(listos), abono = a.abonoSum || 0, aplica = r2(Math.min(abono, total));
+    const logs = pagosDe('APARTADO', a.numero).sort((x, y) => String(x.fecha).localeCompare(String(y.fecha))), lp = logs[logs.length - 1];
+    const nombres = listos.map(it => num(it.cantidad) + ' ' + title((prod(it.codigo) || {}).color || it.codigo)).join(', ');
+    const v = { fecha: today(), numero, cliente: a.cliente, metodo: (lp && lp.metodo) || '', tasa: cfg().tasa || '', vendedor: myName(), notas: 'Entrega parcial del apartado ' + a.numero + (aplica ? ', con abonos por ' + money(aplica) : '') };
+    await writeRows('ventas', ventaRows(needRows('ventas', listos.length), v, listos, estadoPago(total, aplica), aplica));
+    const doc = { fecha: a.fecha, numero: a.numero, cliente: a.cliente, abono: r2(abono - aplica), estado: 'APARTADO', notas: (a.notas ? a.notas + '. ' : '') + 'Entrega parcial como venta N° ' + numero + ' el ' + fdate(today()) + ': ' + nombres };
+    let st;
+    if (contiguous(a.rows)) { st = a.rows[0]; const m = {}; for (const r of a.rows.slice(resto.length)) m[r] = BLANK.apartados(r); if (Object.keys(m).length) await writeRows('apartados', m); }
+    else { const m = {}; for (const r of a.rows) m[r] = BLANK.apartados(r); await writeRows('apartados', m); await fresh('apartados'); st = needRows('apartados', resto.length); }
+    await writeRows('apartados', apRows(st, doc, resto));
+    /* los abonos ya usados pasan a la venta nueva en la pestaña Pagos */
+    let rem = aplica; const mp = {}, nuevos = [];
+    for (const p of logs) {
+      if (rem <= 0.005) break;
+      if (p.monto <= rem + 0.005) { mp[p.row] = [null, 'VENTA', txt(String(numero))]; rem = r2(rem - p.monto); }
+      else { mp[p.row] = [null, null, null, null, r2(p.monto - rem)]; nuevos.push({ fecha: p.fecha, tipo: 'VENTA', numero, cliente: a.cliente, monto: rem, metodo: p.metodo || '', tasa: p.tasa || '', vendedor: p.vendedor || '', notas: 'Parte de un abono del apartado ' + a.numero }); rem = 0; }
+    }
+    if (Object.keys(mp).length) await writeRows('pagos', mp);
+    for (const d of nuevos) await logPago(d);
+  }, 'Entregado lo que ya llegó');
+  if (ok) closeSheet();
+}
+function jpegOf(cv) {
+  const bin = atob(cv.toDataURL('image/jpeg', 0.93).split(',')[1]), img = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) img[i] = bin.charCodeAt(i);
+  return img;
+}
+function pdfOf(pages, PW, PH) {
+  const enc = new TextEncoder(), parts = [], offs = []; let len = 0;
+  const put = d => { const u = typeof d === 'string' ? enc.encode(d) : d; parts.push(u); len += u.length; };
+  const obj = (n, body) => { offs[n] = len; put(n + ' 0 obj\n' + body + '\nendobj\n'); };
+  put('%PDF-1.4\n%STRATO\n');
+  obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2, '<< /Type /Pages /Kids [' + pages.map((p, i) => (3 + i * 3) + ' 0 R').join(' ') + '] /Count ' + pages.length + ' >>');
+  pages.forEach((cv, i) => {
+    const n = 3 + i * 3, img = jpegOf(cv), c = 'q ' + PW + ' 0 0 ' + PH + ' 0 0 cm /Im0 Do Q';
+    obj(n, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + PW + ' ' + PH + '] /Resources << /XObject << /Im0 ' + (n + 1) + ' 0 R >> >> /Contents ' + (n + 2) + ' 0 R >>');
+    offs[n + 1] = len; put((n + 1) + ' 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + cv.width + ' /Height ' + cv.height + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + img.length + ' >>\nstream\n'); put(img); put('\nendstream\nendobj\n');
+    obj(n + 2, '<< /Length ' + c.length + ' >>\nstream\n' + c + '\nendstream');
+  });
+  const N = 3 + pages.length * 3, xref = len; let xr = 'xref\n0 ' + N + '\n0000000000 65535 f \n';
+  for (let i = 1; i < N; i++) xr += String(offs[i]).padStart(10, '0') + ' 00000 n \n';
+  put(xr + 'trailer\n<< /Size ' + N + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n');
+  return new Blob(parts, { type: 'application/pdf' });
+}
+function cartaPages(cv) {
+  const W = cv.width, PH = Math.round(W * 11 / 8.5), foot = 64, top = 56, H = cv.height, cuts = (cv._cuts || []).concat([H]), segs = [];
+  if (H <= PH) segs.push([0, H]);
+  else { let s = 0; while (s < H) { const lim = PH - foot - (segs.length ? top : 0); if (H - s <= lim) { segs.push([s, H]); break; } let e = 0; for (const c of cuts) if (c > s + 80 && c <= s + lim) e = c; if (!e) e = s + lim; segs.push([s, e]); s = e; } }
+  return segs.map(([a, b], i) => {
+    const t = document.createElement('canvas'); t.width = W; t.height = PH; const x = t.getContext('2d');
+    x.fillStyle = BR.hueso; x.fillRect(0, 0, W, PH); x.drawImage(cv, 0, a, W, b - a, 0, i ? top : 0, W, b - a);
+    if (segs.length > 1) { x.fillStyle = BR.muted; x.font = '500 20px ' + FB; x.textAlign = 'right'; x.fillText('Página ' + (i + 1) + ' de ' + segs.length, W - 70, PH - 24); }
+    return t;
+  });
+}
+function canvasPdf(cv) {
+  if (cv.id === 'eccv') return pdfOf(cartaPages(cv), 612, 792);
+  const t = document.createElement('canvas'); t.width = cv.width; t.height = cv.height;
+  const x = t.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, t.width, t.height); x.drawImage(cv, 0, 0);
+  return pdfOf([t], 595.28, Math.round(595.28 * cv.height / cv.width * 100) / 100);
+}
 
 /* ============ hoja (modal) ============ */
 let sheetClose = null;
@@ -1401,7 +1546,7 @@ function ventaPagos(v) {
 function pagosList(list, pagado) {
   if (!list.length && !pagado) return '';
   const sum = list.reduce((s, p) => s + p.monto, 0), rest = r2(pagado - sum);
-  return '<h2 class="sec">Pagos recibidos</h2><div class="list">' + list.map(p => '<div class="row" style="cursor:default"><div class="main"><div class="t">' + money(p.monto) + (p.tasa ? ' <span class="muted small">· ' + bsFmt(p.monto * p.tasa) + '</span>' : '') + '</div><div class="d">' + fdate(p.fecha) + (p.metodo ? ' · ' + esc(title(p.metodo)) : '') + (p.tipo === 'APARTADO' ? ' · abono del apartado ' + esc(p.numero) : '') + (p.vendedor ? ' · lo registró ' + esc(p.vendedor) : '') + '</div></div></div>').join('')
+  return '<h2 class="sec">Pagos recibidos</h2><div class="list">' + list.map(p => '<div class="row" style="cursor:default"><div class="main"><div class="t">' + money(p.monto) + (p.tasa ? ' <span class="muted small">· ' + bsFmt(p.monto * p.tasa) + '</span>' : '') + '</div><div class="d">' + fdate(p.fecha) + (p.metodo ? ' · ' + esc(title(p.metodo)) : '') + (p.tipo === 'APARTADO' ? ' · abono del apartado ' + esc(p.numero) : '') + (p.vendedor ? ' · lo registró ' + esc(p.vendedor) : '') + '</div></div>' + (can() ? '<div class="end"><button class="btn sm danger" data-act="askAnular" data-id="' + esc(p.id) + '">Anular</button></div>' : '') + '</div>').join('')
     + (rest > 0.005 ? '<div class="row" style="cursor:default"><div class="main"><div class="t">' + money(rest) + '</div><div class="d">Pagos anteriores sin detalle</div></div></div>' : '') + '</div>';
 }
 function apartadoDetail(id) {
@@ -1416,6 +1561,7 @@ function apartadoDetail(id) {
   if (a.ventaNumero) b += '<p class="small">Entregado como venta N° ' + esc(a.ventaNumero) + '.</p>';
   if (est === 'APARTADO') {
     if (can()) b += '<div class="btns full" style="margin-top:8px"><button class="btn pri" data-act="entregar" data-id="' + esc(a.id) + '"' + (faltan.length ? ' disabled style="opacity:.5"' : '') + '>Entregar y convertir en venta</button><button class="btn" data-act="abono" data-id="' + esc(a.id) + '">Registrar abono</button></div>';
+    if (can() && faltan.length && apListos(a).listos.length) b += '<div class="btns full" style="margin-top:8px"><button class="btn" data-act="entregarParcial" data-id="' + esc(a.id) + '">Entregar lo que ya llegó (' + apListos(a).listos.reduce((s, it) => s + num(it.cantidad), 0) + ')</button></div>';
     if (faltan.length) b += '<p class="muted small">Para entregarlo falta que llegue: ' + faltan.map(it => esc(title((prod(it.codigo) || {}).color || it.codigo))).join(', ') + '.</p>';
   }
   b += '<div class="btns full" style="margin-top:8px"><button class="btn" data-act="recibo" data-k="apartado" data-id="' + esc(a.id) + '">Recibo</button><a class="btn" target="_blank" rel="noopener" href="' + esc(waLink(cl && cl.telefono, reciboTexto('apartado', a))) + '">WhatsApp</a></div>';
@@ -1477,7 +1623,7 @@ function clienteDetail(id) {
   if (aps.length) b += '<h2 class="sec">Apartados</h2><div class="list">' + aps.map(a => '<button class="row" data-act="apartado" data-id="' + esc(a.id) + '"><div class="main"><div class="t">' + esc(a.numero) + ' · ' + fdate(a.fecha) + '</div></div><div class="end"><div class="big">' + money(apTotals(a).total) + '</div>' + pill(a.estado || 'APARTADO') + '</div></button>').join('') + '</div>';
   const pcs = S.pagos.filter(p => sameName(p.cliente, c.nombre)).sort((x, y) => y.fecha.localeCompare(x.fecha));
   if (pcs.length) b += '<h2 class="sec">Pagos recibidos<span class="r num">' + money(pcs.reduce((a, p) => a + p.monto, 0)) + '</span></h2><div class="list">' + pcs.slice(0, 6).map(p => '<div class="row" style="cursor:default"><div class="main"><div class="t">' + money(p.monto) + '</div><div class="d">' + fdate(p.fecha) + ' · ' + (p.tipo === 'VENTA' ? 'venta N° ' : 'apartado ') + esc(p.numero) + (p.metodo ? ' · ' + esc(title(p.metodo)) : '') + '</div></div></div>').join('') + (pcs.length > 6 ? '<button class="row" data-act="pagosCli" data-cl="' + esc(c.nombre) + '"><div class="main"><div class="t">Ver los ' + pcs.length + ' pagos</div></div><div class="end muted">›</div></button>' : '') + '</div>';
-  b += '<div class="btns full" style="margin-top:12px"><button class="btn pri" data-act="ecuenta" data-cl="' + esc(c.nombre) + '">Estado de cuenta</button></div>';
+  b += '<div class="btns full" style="margin-top:12px"><button class="btn pri" data-act="ecuenta" data-cl="' + esc(c.nombre) + '">Estado de cuenta</button>' + (can() && deudaCliente(c.nombre).length ? '<button class="btn" data-act="pagoCli" data-cl="' + esc(c.nombre) + '">Registrar pago</button>' : '') + '</div>';
   b += '<div class="btns full" style="margin-top:8px">' + (c.telefono ? '<a class="btn pri" target="_blank" rel="noopener" href="' + esc(waLink(c.telefono, 'Hola ' + String(c.nombre).split(' ')[0] + ', ')) + '">WhatsApp</a>' : '') + (can() ? '<button class="btn" data-act="editCliente" data-id="' + esc(c.id) + '">Editar</button>' : '') + '</div>';
   openSheet(c.nombre, b);
 }
@@ -1555,28 +1701,6 @@ async function saveBlob(name, blob, share) {
   setTimeout(() => URL.revokeObjectURL(u), 8000); toast('Archivo descargado');
 }
 function saveCanvas(cv, name) { cv.toBlob(b => saveBlob(name.replace(/[^\w\-.]+/g, '_') + '.png', b, true), 'image/png'); }
-/* ============ PDF (sin librerías: la imagen del documento dentro de una página) ============ */
-function canvasPdf(cv) {
-  const t = document.createElement('canvas'); t.width = cv.width; t.height = cv.height;
-  const x = t.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, t.width, t.height); x.drawImage(cv, 0, 0);
-  const bin = atob(t.toDataURL('image/jpeg', 0.93).split(',')[1]), img = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) img[i] = bin.charCodeAt(i);
-  const PW = 595.28, PH = Math.round(PW * cv.height / cv.width * 100) / 100, enc = new TextEncoder();
-  const parts = [], offs = []; let len = 0;
-  const put = d => { const u = typeof d === 'string' ? enc.encode(d) : d; parts.push(u); len += u.length; };
-  const obj = (n, body) => { offs[n] = len; put(n + ' 0 obj\n' + body + '\nendobj\n'); };
-  put('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n'.replace(/[\xE2\xE3\xCF\xD3]/g, '') + '%STRATO\n');
-  obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
-  obj(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
-  obj(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + PW + ' ' + PH + '] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>');
-  offs[4] = len; put('4 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + cv.width + ' /Height ' + cv.height + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + img.length + ' >>\nstream\n'); put(img); put('\nendstream\nendobj\n');
-  const c = 'q ' + PW + ' 0 0 ' + PH + ' 0 0 cm /Im0 Do Q';
-  obj(5, '<< /Length ' + c.length + ' >>\nstream\n' + c + '\nendstream');
-  const xref = len; let xr = 'xref\n0 6\n0000000000 65535 f \n';
-  for (let i = 1; i <= 5; i++) xr += String(offs[i]).padStart(10, '0') + ' 00000 n \n';
-  put(xr + 'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n');
-  return new Blob(parts, { type: 'application/pdf' });
-}
 async function savePdf(cv, name) { if (cv) await saveBlob(name.replace(/[^\w\-.]+/g, '_') + '.pdf', canvasPdf(cv), true); }
 function drawCatalogo(cv) {
   const gs = catGroups(), n = cfg().negocio, W = 1080, cols = 2, rowH = 92, bs = S.catBs && cfg().tasa;
@@ -1672,6 +1796,13 @@ async function act(ev, b, a, id) {
     case 'rmLine': { const ls = document.querySelectorAll('#lines [data-line]'); if (ls.length > 1) b.closest('[data-line]').remove(); updateLines(); break; }
     case 'applyDu': { const du = num($('#v_du').value); for (const { el, o } of readLines('venta')) el.querySelector('.l-d').value = du ? r2(du * o.cantidad) : ''; updateLines(); break; }
     case 'payAll': { $('#v_pag').value = num($('#sumbox').dataset.total).toFixed(2); break; }
+    case 'askAnular': {
+      const key = 'anular|' + id;
+      if (pending[key] && Date.now() - pending[key] < 600) break; if (pending[key]) { delete pending[key]; await anularPago(id); }
+      else { pending[key] = Date.now(); b.textContent = 'Toca otra vez'; setTimeout(() => { delete pending[key]; if (b.isConnected) b.textContent = 'Anular'; }, 4000); }
+      break; }
+    case 'pagoCli': pagoCliForm(b.dataset.cl); break;
+    case 'entregarParcial': await entregarParcial(id); break;
     case 'askDel': {
       const key = b.dataset.k + id;
       if (pending[key] && Date.now() - pending[key] < 600) break; if (pending[key]) { delete pending[key]; await doDelete(b.dataset.k, id); }
@@ -1913,6 +2044,23 @@ async function onSubmit(ev, f) {
         await writeRows(k, mm);
         await logPago({ fecha: fd.fecha || today(), tipo: k === 'ventas' ? 'VENTA' : 'APARTADO', numero: d.numero, cliente: d.cliente, monto: m, metodo: fd.metodo || '', tasa: isBsM(fd.metodo) ? (num(fd.tasa) || cfg().tasa || '') : '', notas: k === 'ventas' ? 'Pago de venta' : 'Abono de apartado' });
       }, 'Pago registrado en la hoja');
+      if (ok) closeSheet();
+    }
+    else if (kind === 'pagoCli') {
+      const m = num(fd.monto); if (m <= 0) return err('Escribe un monto mayor a cero.');
+      const nombre = f.dataset.cl, fecha = fd.fecha || today();
+      if (repartir(nombre, m).sobra > 0.005) return err('El monto es mayor que lo que debe.');
+      const ok = await W(async () => {
+        await fresh('ventas'); await fresh('apartados');
+        const r = repartir(nombre, m);
+        if (r.sobra > 0.005 || !r.partes.length) throw Object.assign(new Error('La deuda cambió mientras tanto. Revisa y vuelve a intentar.'), { full: true });
+        const multi = r.partes.length > 1;
+        for (const p of r.partes) {
+          const nota = (p.k === 'ventas' ? 'Pagó ' : 'Abonó ') + money(p.m) + ' el ' + fdate(fecha) + (fd.metodo ? ' por ' + title(fd.metodo) : '') + (multi ? ' (de un pago de ' + money(m) + ')' : '');
+          await setPagado(p.k, p.d, r2((p.k === 'ventas' ? vt(p.d).pagado : (p.d.abonoSum || 0)) + p.m), nota, fd.metodo);
+          await logPago({ fecha, tipo: p.k === 'ventas' ? 'VENTA' : 'APARTADO', numero: p.d.numero, cliente: p.d.cliente, monto: p.m, metodo: fd.metodo || '', tasa: isBsM(fd.metodo) ? (num(fd.tasa) || cfg().tasa || '') : '', notas: multi ? 'Parte de un pago de ' + money(m) + ' (' + r.partes.filter(q => q !== p).map(q => money(q.m) + (q.k === 'ventas' ? ' a la venta N° ' : ' al apartado ') + q.d.numero).join(', ') + ')' : (p.k === 'ventas' ? 'Pago de venta' : 'Abono de apartado') });
+        }
+      }, 'Pago registrado');
       if (ok) closeSheet();
     }
     else if (kind === 'pedido' || kind === 'compra') {
