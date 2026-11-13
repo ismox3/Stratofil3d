@@ -209,6 +209,11 @@ button,[data-act]{-webkit-user-select:none;user-select:none}
 .tab:active{opacity:.6}
 .is-busy{opacity:.55;pointer-events:none}
 button:disabled{opacity:.55}
+.alert{display:block;line-height:1.4;padding:12px 14px}
+.kpis+.alert{margin-top:10px}
+.chip{min-height:40px;padding:8px 14px}
+.btn.sm{min-height:40px;padding:9px 14px}
+.back,.x{width:42px;height:42px}
 </style>
 </head>
 <body>
@@ -633,7 +638,7 @@ function render() {
   renderTabs();
   renderSync();
   const ready = S.loaded.size >= COLS.length + 1;
-  $('#fab').hidden = !(can() && ready && (S.tab === 'inicio' || S.tab === 'ventas'));
+  $('#fab').hidden = !(can() && ready && S.tab === 'ventas');
   $('#banner').innerHTML = S.sheetErr ? '<div class="banner">' + esc(S.sheetErr) + ' <a href="' + SHEET_URL + '" target="_blank" rel="noopener" style="color:inherit">Abrir la hoja</a></div>' : '';
   const views = { inicio: vInicio, inventario: vInventario, ventas: vVentas, cobrar: vCobrar, mas: vMas };
   let html;
@@ -659,7 +664,7 @@ function vInicio() {
   const R = resumen(y), M = R.m[mi];
   const cob = porCobrar(), totCob = cob.reduce((s, x) => s + x.total, 0);
   let valor = 0, units = 0, bajo = 0, camino = 0, apartados = 0, rep = 0;
-  for (const k in C.P) { const e = C.P[k]; valor += e.valor; units += e.disp; camino += e.enCamino; rep += e.costoRep; if (e.estado === 'STOCK BAJO' || e.estado === 'REVISAR') bajo++; }
+  for (const k in C.P) { const e = C.P[k]; valor += e.valor; units += Math.max(0, e.enMano); camino += e.enCamino; rep += e.costoRep; if (e.estado === 'STOCK BAJO' || e.estado === 'REVISAR') bajo++; }
   const apPend = S.apartados.filter(a => (a.estado || 'APARTADO') === 'APARTADO');
   const pedidos = new Set(S.encamino.filter(x => x.estado !== 'RECIBIDO').map(x => x.pedido)).size;
   let h = '<div class="kpis">'
@@ -819,7 +824,7 @@ const SUBS = {
   },
   resumen() {
     const R = resumen(S.year);
-    let valor = 0, units = 0, camino = 0, rep = 0; for (const k in C.P) { const e = C.P[k]; valor += e.valor; units += e.disp; camino += e.enCamino; rep += e.costoRep; }
+    let valor = 0, units = 0, camino = 0, rep = 0; for (const k in C.P) { const e = C.P[k]; valor += e.valor; units += Math.max(0, e.enMano); camino += e.enCamino; rep += e.costoRep; }
     const years = new Set([new Date().getFullYear()]); for (const v of S.ventas) years.add(+String(v.fecha).slice(0, 4)); for (const v of S.compras) years.add(+String(v.fecha).slice(0, 4));
     let h = head('Resumen anual', true);
     h += '<div class="chips">' + [...years].filter(Boolean).sort().map(y => '<button class="chip" data-act="year" data-y="' + y + '" aria-pressed="' + (S.year === y) + '">' + y + '</button>').join('') + '</div>';
@@ -1086,6 +1091,7 @@ async function ask(q) {
 /* ============ estado de cuenta y pagos recibidos ============ */
 Object.assign(S, { pgP: 'mes', pgCli: '', pgMet: '' });
 const sameName = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+const pdfLbl = () => (typeof saveBlob === 'function' ? 'Compartir PDF' : 'Descargar PDF');
 const imgLbl = () => (typeof saveBlob === 'function' ? 'Compartir imagen' : 'Guardar imagen');
 function estadoCuenta(nombre) {
   const vs = S.ventas.filter(v => sameName(v.cliente, nombre)).sort((a, b) => a.fecha.localeCompare(b.fecha) || num(a.numero) - num(b.numero));
@@ -1129,7 +1135,7 @@ function ecuentaShow(nombre) {
 }
 function ecuentaImg(nombre) {
   const ec = estadoCuenta(nombre);
-  openSheet('Estado de cuenta · ' + ec.nombre, '<canvas id="eccv" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line);display:block"></canvas><div class="btns full" style="margin-top:12px"><button class="btn pri" data-act="saveImg" data-n="' + esc('Estado-de-cuenta-' + String(ec.nombre).replace(/\s+/g, '_') + '-' + today()) + '">' + imgLbl() + '</button><button class="btn" data-act="ecuenta" data-cl="' + esc(ec.nombre) + '">Volver</button></div>', async () => { try { await document.fonts.ready; await logoReady(); } catch (e) {} drawEcuenta($('#eccv'), ec); });
+  openSheet('Estado de cuenta · ' + ec.nombre, '<canvas id="eccv" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line);display:block"></canvas><div class="btns full" style="margin-top:12px"><button class="btn pri" data-act="saveImg" data-n="' + esc('Estado-de-cuenta-' + String(ec.nombre).replace(/\s+/g, '_') + '-' + today()) + '">' + imgLbl() + '</button><button class="btn pri" data-act="savePdf" data-n="' + esc('Estado-de-cuenta-' + String(ec.nombre).replace(/\s+/g, '_') + '-' + today()) + '">' + pdfLbl() + '</button><button class="btn" data-act="ecuenta" data-cl="' + esc(ec.nombre) + '">Volver</button></div>', async () => { try { await document.fonts.ready; await logoReady(); } catch (e) {} drawEcuenta($('#eccv'), ec); });
 }
 function drawEcuenta(cv, ec) {
   const n = cfg().negocio, W = 1080, rowH = 74, apH = ec.aps.length ? 80 + ec.aps.length * 56 : 0;
@@ -1489,7 +1495,7 @@ function reciboTexto(kind, d) {
 }
 async function reciboShow(kind, id) {
   const d = (kind === 'venta' ? S.ventas : S.apartados).find(x => x.id === id); if (!d) return;
-  openSheet(kind === 'venta' ? 'Recibo N° ' + d.numero : 'Comprobante ' + d.numero, '<canvas id="rcv" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line);display:block"></canvas><div class="btns full" style="margin-top:12px"><button class="btn pri" data-act="saveImg" data-n="' + esc((kind === 'venta' ? 'Recibo-' + d.numero : 'Apartado-' + d.numero) + '-' + String(d.cliente).replace(/\s+/g, '_')) + '">Compartir imagen</button><button class="btn" data-act="copyRecibo" data-k="' + kind + '" data-id="' + esc(id) + '">Copiar texto</button></div>', async () => { try { await document.fonts.ready; await logoReady(); } catch (e) {} drawRecibo($('#rcv'), kind, d); });
+  openSheet(kind === 'venta' ? 'Recibo N° ' + d.numero : 'Comprobante ' + d.numero, '<canvas id="rcv" style="width:100%;height:auto;border-radius:12px;border:1px solid var(--line);display:block"></canvas><div class="btns full" style="margin-top:12px"><button class="btn pri" data-act="saveImg" data-n="' + esc((kind === 'venta' ? 'Recibo-' + d.numero : 'Apartado-' + d.numero) + '-' + String(d.cliente).replace(/\s+/g, '_')) + '">' + imgLbl() + '</button><button class="btn pri" data-act="savePdf" data-n="' + esc((kind === 'venta' ? 'Recibo-' + d.numero : 'Apartado-' + d.numero) + '-' + String(d.cliente).replace(/\s+/g, '_')) + '">' + pdfLbl() + '</button><button class="btn" data-act="copyRecibo" data-k="' + kind + '" data-id="' + esc(id) + '">Copiar texto</button></div>', async () => { try { await document.fonts.ready; await logoReady(); } catch (e) {} drawRecibo($('#rcv'), kind, d); });
 }
 function wrapText(ctx, text, maxW) { const words = String(text).split(' '); const lines = []; let l = ''; for (const w of words) { const t = l ? l + ' ' + w : w; if (ctx.measureText(t).width > maxW && l) { lines.push(l); l = w; } else l = t; } if (l) lines.push(l); return lines; }
 const BR = { noche: '#051022', verde: '#00DF60', naranja: '#FF5500', hueso: '#F1F6F0', acero: '#677381', muted: '#4F5967', mutedD: '#A6B0BC', line: '#D5DCD4', raised: '#0D1B33' };
@@ -1549,6 +1555,29 @@ async function saveBlob(name, blob, share) {
   setTimeout(() => URL.revokeObjectURL(u), 8000); toast('Archivo descargado');
 }
 function saveCanvas(cv, name) { cv.toBlob(b => saveBlob(name.replace(/[^\w\-.]+/g, '_') + '.png', b, true), 'image/png'); }
+/* ============ PDF (sin librerías: la imagen del documento dentro de una página) ============ */
+function canvasPdf(cv) {
+  const t = document.createElement('canvas'); t.width = cv.width; t.height = cv.height;
+  const x = t.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, t.width, t.height); x.drawImage(cv, 0, 0);
+  const bin = atob(t.toDataURL('image/jpeg', 0.93).split(',')[1]), img = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) img[i] = bin.charCodeAt(i);
+  const PW = 595.28, PH = Math.round(PW * cv.height / cv.width * 100) / 100, enc = new TextEncoder();
+  const parts = [], offs = []; let len = 0;
+  const put = d => { const u = typeof d === 'string' ? enc.encode(d) : d; parts.push(u); len += u.length; };
+  const obj = (n, body) => { offs[n] = len; put(n + ' 0 obj\n' + body + '\nendobj\n'); };
+  put('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n'.replace(/[\xE2\xE3\xCF\xD3]/g, '') + '%STRATO\n');
+  obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+  obj(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + PW + ' ' + PH + '] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>');
+  offs[4] = len; put('4 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + cv.width + ' /Height ' + cv.height + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + img.length + ' >>\nstream\n'); put(img); put('\nendstream\nendobj\n');
+  const c = 'q ' + PW + ' 0 0 ' + PH + ' 0 0 cm /Im0 Do Q';
+  obj(5, '<< /Length ' + c.length + ' >>\nstream\n' + c + '\nendstream');
+  const xref = len; let xr = 'xref\n0 6\n0000000000 65535 f \n';
+  for (let i = 1; i <= 5; i++) xr += String(offs[i]).padStart(10, '0') + ' 00000 n \n';
+  put(xr + 'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n');
+  return new Blob(parts, { type: 'application/pdf' });
+}
+async function savePdf(cv, name) { if (cv) await saveBlob(name.replace(/[^\w\-.]+/g, '_') + '.pdf', canvasPdf(cv), true); }
 function drawCatalogo(cv) {
   const gs = catGroups(), n = cfg().negocio, W = 1080, cols = 2, rowH = 92, bs = S.catBs && cfg().tasa;
   let H = 330 + 170; for (const g of gs) H += 120 + Math.ceil(g.items.length / cols) * rowH;
@@ -1656,6 +1685,7 @@ async function act(ev, b, a, id) {
     case 'entregar': await entregar(id); break;
     case 'recibo': reciboShow(b.dataset.k, id); break;
     case 'copyRecibo': { const d = (b.dataset.k === 'venta' ? S.ventas : S.apartados).find(x => x.id === id); copyText(reciboTexto(b.dataset.k, d)); break; }
+    case 'savePdf': await savePdf($('#rcv') || $('#eccv'), b.dataset.n); break;
     case 'saveImg': saveCanvas($('#rcv') || $('#catcv') || $('#eccv'), b.dataset.n); break;
     case 'copyCobro': { const x = porCobrar().find(z => z.cliente === b.dataset.cl); if (x) copyText(msgCobro(x)); break; }
     case 'copyRepo': { const rows = Object.values(C.P).filter(e => e.sugerido > 0); copyText('Pedido sugerido ' + fdate(today()) + '\n' + rows.map(e => '• ' + e.sugerido + ' × ' + e.p.codigo + ' ' + title(e.p.color) + ' (' + e.p.tipo + ', ' + title(e.p.presentacion) + ')').join('\n') + '\nCosto estimado: ' + money(rows.reduce((s, e) => s + e.costoRep, 0))); break; }
@@ -1734,7 +1764,8 @@ async function entregar(id) {
     await fresh('ventas');
     numero = nextVenta();
     const total = sumItems(a.items), pagado = a.abonoSum || 0;
-    const v = { fecha: today(), numero, cliente: a.cliente, metodo: '', tasa: cfg().tasa || '', vendedor: myName(), notas: ('Entrega del apartado ' + a.numero + (pagado ? ', con abonos por ' + money(pagado) : '') + '. ' + (a.notas || '')).trim() };
+    const lp = pagosDe('APARTADO', a.numero).slice(-1)[0];
+    const v = { fecha: today(), numero, cliente: a.cliente, metodo: (lp && lp.metodo) || '', tasa: cfg().tasa || '', vendedor: myName(), notas: ('Entrega del apartado ' + a.numero + (pagado ? ', con abonos por ' + money(pagado) : '') + '. ' + (a.notas || '')).trim() };
     const start = needRows('ventas', a.items.length);
     await writeRows('ventas', ventaRows(start, v, a.items, estadoPago(total, pagado), pagado));
     await setApEstado(a, 'ENTREGADO', 'Entregado como venta N° ' + numero + ' el ' + fdate(today()));
@@ -1834,6 +1865,7 @@ async function onSubmit(ev, f) {
         for (const c in need) { const own = old ? old.items.filter(i => i.codigo === c).reduce((s, i) => s + num(i.cantidad), 0) : 0; const ec = C.P[c] || {}; if (need[c] > (ec.disp || 0) + own) return err('No hay suficiente ' + title(prod(c).color) + ' disponible.' + (ec.apStock ? ' Lo que hay está apartado para ' + apQuien(c) + '; si es para esa persona, entrégalo desde el apartado.' : ' Si viene en camino, regístralo como apartado.')); }
       }
       const nombre = fd.cliente.trim(), total = sumItems(items), pagoIni = num(fd.pagado);
+      if (!old && pagoIni > total + 0.005) return err('El pago (' + money(pagoIni) + ') es mayor que el total (' + money(total) + ').');
       let notas = (fd.notas || '').trim();
       if (!old && pagoIni > 0) notas = (notas ? notas + '. ' : '') + (isV ? 'Pagó ' : 'Abonó ') + money(pagoIni) + ' el ' + fdate(fd.fecha) + (fd.metodo ? ' por ' + title(fd.metodo) : '');
       const ok = await W(async () => {
@@ -1861,6 +1893,8 @@ async function onSubmit(ev, f) {
     else if (kind === 'pago') {
       const m = num(fd.monto); if (m <= 0) return err('Escribe un monto mayor a cero.');
       const k = f.dataset.k, d = S[k].find(x => x.id === id); if (!d) return;
+      const debe = (k === 'ventas' ? vt(d) : apTotals(d)).saldo;
+      if (m > debe + 0.005) return err(debe > 0.005 ? 'El monto es mayor que lo que debe (' + money(debe) + ').' : 'Ya está pagado completo.');
       const nota = (k === 'ventas' ? 'Pagó ' : 'Abonó ') + money(m) + ' el ' + fdate(fd.fecha || today()) + (fd.metodo ? ' por ' + title(fd.metodo) : '');
       const ok = await W(async () => {
         await verify(k, d.sigs);
@@ -1877,7 +1911,7 @@ async function onSubmit(ev, f) {
           for (const r of d.rows.slice(1)) { const a2 = new Array(12).fill(null); a2[11] = ''; mm[r] = a2; }
         }
         await writeRows(k, mm);
-        await logPago({ fecha: fd.fecha || today(), tipo: k === 'ventas' ? 'VENTA' : 'APARTADO', numero: d.numero, cliente: d.cliente, monto: m, metodo: fd.metodo || '', tasa: isBsM(fd.metodo) ? num(fd.tasa) : '', notas: k === 'ventas' ? 'Pago de venta' : 'Abono de apartado' });
+        await logPago({ fecha: fd.fecha || today(), tipo: k === 'ventas' ? 'VENTA' : 'APARTADO', numero: d.numero, cliente: d.cliente, monto: m, metodo: fd.metodo || '', tasa: isBsM(fd.metodo) ? (num(fd.tasa) || cfg().tasa || '') : '', notas: k === 'ventas' ? 'Pago de venta' : 'Abono de apartado' });
       }, 'Pago registrado en la hoja');
       if (ok) closeSheet();
     }
@@ -1916,6 +1950,7 @@ async function onSubmit(ev, f) {
           await verify('clientes', { [old.row]: old.sig }); await writeRows('clientes', { [old.row]: arr });
           if (old.nombre !== nombre) {
             for (const k of ['ventas', 'apartados']) { await fresh(k); const m = {}; for (const d of S[k].filter(x => x.cliente === old.nombre)) for (const r of d.rows) m[r] = [null, null, txt(nombre)]; if (Object.keys(m).length) await writeRows(k, m); }
+            await fresh('pagos'); const mp = {}; for (const p of S.pagos.filter(x => x.cliente === old.nombre)) mp[p.row] = [null, null, null, txt(nombre)]; if (Object.keys(mp).length) await writeRows('pagos', mp);
           }
         } else { await fresh('clientes'); if (clienteDe(nombre)) throw Object.assign(new Error('Ya existe un cliente con ese nombre.'), { full: true }); await writeRows('clientes', { [needRows('clientes', 1)]: arr }); }
       }, 'Cliente guardado en la hoja');
